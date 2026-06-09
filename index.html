@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>minsound</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f6f9f5;
+      --surface: #ffffff;
+      --surface2: #edf6ef;
+      --accent: #00a85a;
+      --text: #202724;
+      --muted: #708078;
+      --danger: #e04f48;
+      --border: rgba(30, 64, 44, 0.13);
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+    .hidden { display: none !important; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+    .logo { font-size: 1.25rem; font-weight: 900; color: var(--accent); letter-spacing: -1px; }
+    .header-btns { display: flex; gap: 6px; margin-left: auto; }
+    .icon-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 5px 11px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .icon-btn:hover { background: rgba(0,168,90,0.08); }
+
+    /* ── BUILDER ── */
+    .builder {
+      flex-shrink: 0;
+      padding: 12px 16px 10px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .build-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      margin-bottom: 7px;
+      flex-wrap: wrap;
+    }
+    .lbl {
+      font-size: 0.6rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      line-height: 27px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .sep { width: 1px; height: 18px; background: var(--border); margin: 4px 2px 0; flex-shrink: 0; }
+    .grp { display: flex; gap: 3px; }
+    .grp.wrap { flex-wrap: wrap; }
+
+    .qual-panel { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+    .qual-tabs { display: flex; gap: 3px; flex-wrap: wrap; }
+    .qtab {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 5px;
+      padding: 3px 9px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      transition: all 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .qtab:hover { color: var(--text); background: rgba(0,168,90,0.08); }
+    .qtab.sel { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .tog {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      transition: background 0.1s, border-color 0.1s;
+      line-height: 1.4;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tog:hover { background: rgba(0,168,90,0.08); }
+    .tog.sel { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+    .build-bottom {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .preview-area { display: flex; flex-direction: column; align-items: center; min-width: 62px; }
+    .preview-lbl { font-size: 0.57rem; color: var(--muted); }
+    .preview-name { font-size: 1.55rem; font-weight: 900; color: var(--accent); letter-spacing: -0.5px; }
+
+    .act-btn {
+      border-radius: 8px;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      transition: opacity 0.1s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .act-btn:active { transform: scale(0.95); }
+    .preview-play { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+    .preview-play:hover { background: rgba(0,168,90,0.08); }
+    .add-btn { background: var(--accent); color: #fff; }
+    .add-btn:hover { opacity: 0.88; }
+
+    .text-code-row {
+      display: flex;
+      align-items: stretch;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .code-text-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.84rem;
+      outline: none;
+      resize: none;
+      min-height: 38px;
+      line-height: 1.35;
+      font-family: inherit;
+    }
+    .code-text-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,168,90,0.12); }
+    .code-text-btn {
+      flex-shrink: 0;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0 14px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .code-text-help {
+      margin-top: 4px;
+      min-height: 1.2em;
+      color: var(--muted);
+      font-size: 0.68rem;
+    }
+    .code-text-help.error { color: var(--danger); }
+
+    /* ── CHORD LIST ── */
+    .chord-list-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      min-height: 0;
+    }
+    .list-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .list-title { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .list-count {
+      font-size: 0.65rem; background: var(--surface2); color: var(--muted);
+      padding: 1px 7px; border-radius: 10px;
+    }
+    .list-header-right { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    .cpr-label { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
+    .cpr-sel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 3px 6px;
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+    .clear-all-btn, .break-btn, .transpose-btn {
+      background: none;
+      border: 1px solid rgba(232,90,74,0.3);
+      color: var(--danger);
+      border-radius: 6px;
+      padding: 3px 9px;
+      cursor: pointer;
+      font-size: 0.68rem;
+      white-space: nowrap;
+    }
+    .clear-all-btn:hover { background: rgba(232,90,74,0.08); }
+    .break-btn {
+      border-color: rgba(0,168,90,0.28);
+      color: var(--accent);
+    }
+    .break-btn:hover { background: rgba(0,168,90,0.08); }
+    .transpose-btn {
+      border-color: rgba(0,168,90,0.28);
+      color: var(--accent);
+      padding-inline: 7px;
+    }
+    .transpose-btn:hover { background: rgba(0,168,90,0.08); }
+
+    /* 코드 줄 */
+    .chord-items { display: flex; flex-direction: column; gap: 0; }
+    .empty-msg {
+      text-align: center; color: var(--muted); font-size: 0.82rem; padding: 28px;
+    }
+
+    .chord-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .chord-row:last-child { border-bottom: none; }
+
+    .row-num {
+      font-size: 0.6rem;
+      color: var(--muted);
+      min-width: 20px;
+      text-align: right;
+      line-height: 68px;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .row-cards { display: flex; gap: 7px; flex-wrap: nowrap; }
+
+    .chord-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 68px; height: 68px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.12s, background 0.12s, box-shadow 0.12s, transform 0.12s;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .chord-card.active { transform: scale(1.08); }
+    .chord-card.next-up { border-style: dashed; border-color: rgba(0,168,90,0.36); }
+    .chord-card:not(.empty-card) { cursor: pointer; }
+    .chord-card:not(.empty-card):not(.active):hover { background: rgba(0,168,90,0.05); }
+    .chord-card.empty-card { opacity: 0.3; border-style: dashed; cursor: default; }
+    .chord-card.empty-card .card-name { font-size: 1.4rem; color: var(--muted); }
+    .chord-card.selected { outline: 2px solid #ffe66d; outline-offset: 2px; }
+    .chord-card.br-card { width: 30px; min-width: 30px; border-style: dashed; opacity: 0.4; color: var(--muted); font-size: 1rem; cursor: default; }
+    .chord-card.line-break-before::before {
+      content: "";
+      position: absolute;
+      left: -6px;
+      top: 10px;
+      bottom: 10px;
+      width: 3px;
+      border-radius: 2px;
+      background: var(--accent);
+    }
+
+    .card-num { font-size: 0.57rem; color: var(--muted); }
+    .card-name { font-size: 1.05rem; font-weight: 800; margin-top: 2px; color: var(--text); }
+
+    .del-btn {
+      position: absolute; top: 2px; right: 5px;
+      background: none; border: none;
+      color: var(--muted); cursor: pointer;
+      font-size: 0.82rem; opacity: 0; line-height: 1;
+      transition: opacity 0.1s; padding: 0;
+    }
+    .chord-card:hover .del-btn { opacity: 0.65; }
+    .del-btn:hover { color: var(--danger) !important; opacity: 1 !important; }
+
+    .card-oct-wrap {
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      opacity: 0;
+      transition: opacity 0.1s;
+      z-index: 2;
+    }
+    .chord-card:not(.empty-card):hover .card-oct-wrap,
+    .chord-card.selected .card-oct-wrap { opacity: 1; }
+    .oct-btn {
+      background: rgba(0,168,90,0.08);
+      border: 1px solid rgba(30,64,44,0.12);
+      color: rgba(32,39,36,0.68);
+      cursor: pointer;
+      font-size: 0.55rem;
+      line-height: 1;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .oct-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(0,168,90,0.12); }
+    .oct-label {
+      font-size: 0.55rem;
+      color: var(--muted);
+      font-weight: 800;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+    }
+    .chord-card.dragging { opacity: 0.45; transform: scale(0.96); }
+    .chord-card.drop-target { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .drag-ghost {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 500;
+      pointer-events: none;
+      background: rgba(255,255,255,0.96);
+      color: var(--text);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(18,52,34,0.18);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      flex-shrink: 0;
+      padding: 10px 16px 14px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+    .auto-row {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 7px; flex-wrap: wrap;
+    }
+    .sound-sel {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 4px 7px;
+      font-size: 0.76rem; cursor: pointer; flex-shrink: 0; font-family: inherit;
+    }
+    .bpm-ctrl { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+    .bpm-lbl { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
+    .bpm-num { font-size: 0.82rem; font-weight: 700; color: var(--text); min-width: 30px; text-align: center; }
+    .bpm-step {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 5px; padding: 2px 8px;
+      cursor: pointer; font-size: 0.9rem; line-height: 1.4;
+    }
+    .bpm-step:hover { background: rgba(0,168,90,0.08); }
+    .auto-btn {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 7px 10px;
+      cursor: pointer; font-size: 0.78rem; font-weight: 600;
+      transition: background 0.1s, transform 0.08s; white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .auto-btn:hover { background: rgba(0,168,90,0.08); }
+    .auto-btn:active { transform: scale(0.95); }
+    .auto-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .playback-controls { display: flex; gap: 6px; margin-bottom: 7px; }
+    .pb-btn {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 4px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 500;
+      transition: background 0.1s, transform 0.08s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pb-btn:hover { background: rgba(0,168,90,0.08); }
+    .pb-btn:active { transform: scale(0.95); }
+
+    .space-hint {
+      text-align: center; font-size: 0.68rem; color: var(--muted); margin-bottom: 7px;
+    }
+    .space-btn {
+      display: block; width: 100%;
+      padding: 15px;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 1rem; font-weight: 700; letter-spacing: 2px;
+      transition: background 0.08s, border-color 0.08s, transform 0.08s, color 0.08s;
+      user-select: none; -webkit-user-select: none;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .space-btn.pressed {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      transform: scale(0.982);
+    }
+
+    /* ── PROJECT MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.72);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-overlay.hidden { display: none; }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      width: min(92vw, 400px);
+      max-height: 80dvh;
+      overflow-y: auto;
+    }
+    .modal-head { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+
+    .modal-slot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .slot-info { flex: 1; min-width: 0; }
+    .slot-name { display: block; font-size: 0.84rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .slot-date { display: block; font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
+
+    .slot-load, .slot-overwrite, .slot-del {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 5px 9px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .slot-load:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .slot-overwrite:hover { background: rgba(0,168,90,0.08); }
+    .slot-del { border-color: rgba(232,90,74,0.3); color: var(--danger); }
+    .slot-del:hover { background: rgba(232,90,74,0.1); }
+
+    .modal-empty { color: var(--muted); font-size: 0.8rem; text-align: center; padding: 22px 0; }
+
+    .modal-new {
+      display: flex; gap: 7px; margin-top: 14px;
+    }
+    .modal-new input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.82rem;
+      outline: none;
+    }
+    .modal-new input:focus { border-color: var(--accent); }
+    .modal-save-btn {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 7px 14px; cursor: pointer;
+      font-size: 0.82rem; font-weight: 600;
+      white-space: nowrap;
+    }
+    .modal-close {
+      display: block; width: 100%;
+      margin-top: 10px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 8px;
+      cursor: pointer;
+      font-size: 0.78rem;
+    }
+    .modal-close:hover { background: rgba(0,168,90,0.06); }
+
+    /* ── CAMERA OVERLAY ── */
+    .cam-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cam-overlay.hidden { display: none; }
+
+    .cam-video {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .cam-grad-top {
+      position: absolute; top: 0; left: 0; right: 0; height: 110px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+      z-index: 1; pointer-events: none;
+    }
+    .cam-grad-bot {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 200px;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      z-index: 1; pointer-events: none;
+    }
+    .cam-top-bar {
+      position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+      z-index: 3; font-size: 0.9rem; font-weight: 900;
+      color: rgba(255,255,255,0.8); letter-spacing: -0.3px;
+    }
+    .cam-center {
+      position: absolute; bottom: 100px; left: 0; right: 0;
+      z-index: 2; text-align: center; pointer-events: none;
+    }
+    .cam-chord-name {
+      font-size: clamp(4rem, 16vw, 8rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 4px 28px rgba(0,0,0,0.45);
+      letter-spacing: -3px;
+      line-height: 1;
+      transition: color 0.1s, opacity 0.1s;
+    }
+    @keyframes playing-pulse {
+      0%,100% { text-shadow: 0 4px 28px rgba(0,0,0,0.45); }
+      50% { text-shadow: 0 0 40px currentColor, 0 4px 28px rgba(0,0,0,0.45); }
+    }
+    .cam-chord-name.playing { animation: playing-pulse 1.2s ease-in-out infinite; }
+    .cam-chord-num {
+      font-size: 1rem; color: rgba(255,255,255,0.5);
+      margin-top: 8px; letter-spacing: 0.5px;
+    }
+    .cam-controls {
+      position: absolute; bottom: 30px; left: 0; right: 0;
+      display: flex; justify-content: center; z-index: 3;
+    }
+    .cam-exit-btn {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: #fff; border-radius: 22px;
+      padding: 10px 24px; cursor: pointer; font-size: 0.88rem;
+    }
+    .cam-exit-btn:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="logo">minsound</span>
+    <div class="header-btns">
+      <button class="icon-btn" id="projectBtn">📁 프로젝트</button>
+      <button class="icon-btn" id="camBtn">📷 카메라</button>
+    </div>
+  </header>
+
+  <div class="builder">
+    <div class="build-row">
+      <span class="lbl">근음</span>
+      <div class="grp" id="rootGrp">
+        <button class="tog sel" data-val="C">C</button>
+        <button class="tog" data-val="D">D</button>
+        <button class="tog" data-val="E">E</button>
+        <button class="tog" data-val="F">F</button>
+        <button class="tog" data-val="G">G</button>
+        <button class="tog" data-val="A">A</button>
+        <button class="tog" data-val="B">B</button>
+      </div>
+      <span class="sep"></span>
+      <span class="lbl">변음</span>
+      <div class="grp" id="accGrp">
+        <button class="tog" data-val="b">♭</button>
+        <button class="tog sel" data-val="n">♮</button>
+        <button class="tog" data-val="#">♯</button>
+      </div>
+      <span class="sep"></span>
+      <span class="lbl">옥타브</span>
+      <div class="grp" id="octGrp">
+        <button class="tog" data-val="2">2</button>
+        <button class="tog sel" data-val="3">3</button>
+        <button class="tog" data-val="4">4</button>
+        <button class="tog" data-val="5">5</button>
+      </div>
+      <span class="sep"></span>
+      <span class="lbl">자리바꿈</span>
+      <div class="grp" id="invGrp">
+        <button class="tog sel" data-val="0">근위</button>
+        <button class="tog" data-val="1">1전위</button>
+        <button class="tog" data-val="2">2전위</button>
+        <button class="tog" data-val="3">3전위</button>
+      </div>
+    </div>
+    <div class="build-row">
+      <span class="lbl">코드</span>
+      <div class="qual-panel">
+        <div class="qual-tabs" id="qualTabs">
+          <button class="qtab sel" data-cat="메이저">메이저</button>
+          <button class="qtab" data-cat="마이너">마이너</button>
+          <button class="qtab" data-cat="도미넌트">도미넌트</button>
+          <button class="qtab" data-cat="sus">sus</button>
+          <button class="qtab" data-cat="dim">dim</button>
+        </div>
+        <div class="grp wrap" id="qualGrp"></div>
+      </div>
+    </div>
+    <div class="build-bottom">
+      <div class="preview-area">
+        <span class="preview-lbl">선택 코드</span>
+        <span class="preview-name" id="previewName">C</span>
+      </div>
+      <button class="act-btn preview-play" id="previewPlayBtn">▶ 듣기</button>
+      <button class="act-btn add-btn" id="addBtn">+ 추가</button>
+      <button class="act-btn preview-play" id="emptyBtn">— 빈칸</button>
+    </div>
+    <div class="text-code-row">
+      <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder="C Am F G7 처럼 스페이스로 구분해서 입력"></textarea>
+      <button class="code-text-btn" id="codeTextAddBtn">입력</button>
+    </div>
+    <div class="code-text-help" id="codeTextHelp">예: C Am F G7  /  빈칸은 - 로 입력</div>
+  </div>
+
+  <div class="chord-list-section">
+    <div class="list-header">
+      <span class="list-title">코드 목록</span>
+      <span class="list-count" id="chordCount">0개</span>
+      <div class="list-header-right">
+        <span class="cpr-label">줄당</span>
+        <select class="cpr-sel" id="cprSel">
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+          <option value="0">무제한</option>
+        </select>
+        <span class="cpr-label">전조</span>
+        <button class="transpose-btn" id="transposeDownBtn" title="전체 반음 내리기">-</button>
+        <button class="transpose-btn" id="transposeUpBtn" title="전체 반음 올리기">+</button>
+        <button class="break-btn" id="breakBtn" title="무제한 줄당에서 선택한 코드부터 새 줄 시작">줄바꿈</button>
+        <button class="clear-all-btn" id="clearAllBtn">전체 삭제</button>
+      </div>
+    </div>
+    <div class="chord-items" id="chordItems">
+      <div class="empty-msg">코드를 추가하면 여기에 표시됩니다</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="auto-row">
+      <select class="sound-sel" id="soundSel">
+        <option value="basic">🔊 기본</option>
+        <option value="balladpiano">🎹 피아노 발라드</option>
+      </select>
+      <div class="bpm-ctrl">
+        <span class="bpm-lbl">BPM</span>
+        <button class="bpm-step" id="bpmDown">−</button>
+        <span class="bpm-num" id="bpmDisplay">80</span>
+        <button class="bpm-step" id="bpmUp">＋</button>
+      </div>
+      <button class="auto-btn" id="autoPlayBtn">▶ 자동재생</button>
+    </div>
+    <div class="playback-controls">
+      <button class="pb-btn" id="resetBtn">⏮ 처음으로</button>
+      <button class="pb-btn" id="backBtn">← 뒤로</button>
+    </div>
+    <div class="space-hint">SPACE · ↓ 현재 재생 &nbsp;/&nbsp; → · f 다음 &nbsp;/&nbsp; ← · d 이전 &nbsp;/&nbsp; Shift+클릭 범위 선택</div>
+    <button class="space-btn" id="spaceBtn">SPACE</button>
+  </footer>
+
+  <!-- 프로젝트 모달 -->
+  <div class="modal-overlay hidden" id="projectModal">
+    <div class="modal-box">
+      <div class="modal-head">📁 프로젝트</div>
+      <div id="saveSlotList"></div>
+      <div class="modal-new">
+        <input type="text" id="saveNameInput" placeholder="프로젝트 이름..." maxlength="40">
+        <button class="modal-save-btn" id="saveNewBtn">💾 저장</button>
+      </div>
+      <button class="modal-close" id="modalCloseBtn">✕ 닫기</button>
+    </div>
+  </div>
+
+  <!-- 카메라 오버레이 -->
+  <div class="cam-overlay hidden" id="camOverlay">
+    <video class="cam-video" id="camVideo" autoplay playsinline muted></video>
+    <div class="cam-grad-top"></div>
+    <div class="cam-grad-bot"></div>
+    <div class="cam-top-bar">minsound</div>
+    <div class="cam-center">
+      <div class="cam-chord-name" id="camChordName">—</div>
+      <div class="cam-chord-num" id="camChordNum"></div>
+    </div>
+    <div class="cam-controls">
+      <button class="cam-exit-btn" id="camExitBtn">✕ 나가기</button>
+    </div>
+  </div>
+
+<script>
+// ── 상수 ──
+const NOTE_PCS   = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+const ACC_OFFSET = {b:-1,n:0,'#':1};
+const QUALITY_INTERVALS = {
+  maj:[0,4,7], m:[0,3,7], '5':[0,7],
+  '7':[0,4,7,10], maj7:[0,4,7,11], m7:[0,3,7,10],
+  m7b5:[0,3,6,10], dim7:[0,3,6,9], aug7:[0,4,8,10],
+  '7sus4':[0,5,7,10], '7sus2':[0,2,7,10],
+  '6':[0,4,7,9], m6:[0,3,7,9], '69':[0,4,7,9,14],
+  '9':[0,4,7,10,14], maj9:[0,4,7,11,14], m9:[0,3,7,10,14],
+  add9:[0,4,7,14], madd9:[0,3,7,14],
+  '11':[0,4,7,10,14,17], maj11:[0,4,7,11,14,17], m11:[0,3,7,10,14,17],
+  '13':[0,4,7,10,14,17,21], maj13:[0,4,7,11,14,17,21], m13:[0,3,7,10,14,17,21],
+  sus2:[0,2,7], sus4:[0,5,7], dim:[0,3,6], aug:[0,4,8],
+};
+const QUALITY_COLORS = {
+  maj:'#4a90d9', m:'#5a9e6f', '5':'#7a8898',
+  '7':'#e8a44a', maj7:'#5a9e9e', m7:'#9e5aae',
+  m7b5:'#c04040', dim7:'#b03030', aug7:'#d94a9e',
+  '7sus4':'#3aabbb', '7sus2':'#5ab8cc',
+  '6':'#c8a440', m6:'#7ab87a', '69':'#c89a30',
+  '9':'#e07a20', maj9:'#4ab8b8', m9:'#8840b8',
+  add9:'#60b050', madd9:'#50a060',
+  '11':'#c86820', maj11:'#3898a8', m11:'#7030a8',
+  '13':'#d4a020', maj13:'#30a878', m13:'#6028a0',
+  sus2:'#4ab8d9', sus4:'#7ab85a', dim:'#e85a4a', aug:'#d94a9e',
+};
+const LABEL_MAP = { maj:'', '69':'6/9' };
+const SAVES_KEY = 'minsound_saves';
+const PC_TO_SHARP = [
+  ['C','n'], ['C','#'], ['D','n'], ['D','#'], ['E','n'], ['F','n'],
+  ['F','#'], ['G','n'], ['G','#'], ['A','n'], ['A','#'], ['B','n']
+];
+const PC_TO_FLAT = [
+  ['C','n'], ['D','b'], ['D','n'], ['E','b'], ['E','n'], ['F','n'],
+  ['G','b'], ['G','n'], ['A','b'], ['A','n'], ['B','b'], ['B','n']
+];
+const TEXT_QUALITY_ALIASES = {
+  '':'maj', maj:'maj', major:'maj', M:'maj', m:'m', min:'m', minor:'m', '-':'m',
+  '5':'5', aug:'aug', '+':'aug', dim:'dim', o:'dim',
+  '7':'7', M7:'maj7', maj7:'maj7', ma7:'maj7', m7:'m7', min7:'m7', '-7':'m7',
+  m7b5:'m7b5', 'ø':'m7b5', dim7:'dim7', o7:'dim7', aug7:'aug7', '+7':'aug7',
+  '7sus4':'7sus4', '7sus2':'7sus2',
+  '6':'6', m6:'m6', min6:'m6', '69':'69', '6/9':'69',
+  '9':'9', M9:'maj9', maj9:'maj9', m9:'m9', min9:'m9', add9:'add9', 'madd9':'madd9', 'm(add9)':'madd9',
+  '11':'11', M11:'maj11', maj11:'maj11', m11:'m11', min11:'m11',
+  '13':'13', M13:'maj13', maj13:'maj13', m13:'m13', min13:'m13',
+  sus:'sus4', sus2:'sus2', sus4:'sus4',
+};
+
+// ── 빌더 상태 ──
+let bRoot = 'C', bAcc = 'n', bQuality = 'maj', bOct = 3, bInv = 0;
+
+// ── 목록 상태 ──
+let chords = [];
+let currentIdx = -1;
+let isSpaceHeld = false;
+let chordsPerRow = 4;
+let selectedIdx = -1;
+let selectionAnchor = -1;
+let selectedRange = null;
+let chordClipboard = null;
+let dragWatch = null;
+let dragState = null;
+let dragJustFinished = false;
+
+// ── 사운드 / 자동재생 ──
+let currentSound = 'basic';
+let autoBpm = 80;
+let autoPlayActive = false;
+let autoPlayTimer = null;
+let balladPoly = null;
+
+// ── 오디오 ──
+let audioReady = false;
+let chordGain, chordFilter;
+const chordOscs = [];
+const NUM_OSCS = 7;
+
+async function ensureAudio() {
+  if (audioReady) return;
+  await Tone.start();
+  const lim  = new Tone.Limiter(-2).toDestination();
+  const comp = new Tone.Compressor({ threshold:-18, ratio:8, attack:0.003, release:0.12, knee:3 }).connect(lim);
+  chordFilter = new Tone.Filter(2000, 'lowpass').connect(comp);
+  chordGain = new Tone.Gain(0).connect(chordFilter);
+  for (let i = 0; i < NUM_OSCS; i++) {
+    const o = new Tone.Oscillator(220, 'triangle').connect(chordGain);
+    o.start();
+    chordOscs.push(o);
+  }
+  audioReady = true;
+}
+
+function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+function getChordFreqs(root, acc, oct, quality, inv) {
+  const base = (oct + 1) * 12 + NOTE_PCS[root] + (ACC_OFFSET[acc] ?? 0);
+  const intervals = QUALITY_INTERVALS[quality] || [0, 4, 7];
+  let notes = intervals.map(i => base + i);
+  const n = Math.min(inv || 0, notes.length - 1);
+  for (let v = 0; v < n; v++) {
+    const minN = Math.min(...notes);
+    notes[notes.indexOf(minN)] += 12;
+    notes.sort((a, b) => a - b);
+  }
+  return notes.map(midiToFreq);
+}
+
+function playSoundFrom(root, acc, oct, quality, inv) {
+  if (!audioReady) return;
+  if (currentSound === 'balladpiano') {
+    playBalladPiano(root, acc, oct, quality, inv);
+    return;
+  }
+  const freqs = getChordFreqs(root, acc, oct, quality, inv);
+  chordOscs.forEach((o, i) => o.frequency.rampTo(freqs[i % freqs.length], 0.04));
+  chordGain.gain.rampTo(0.5 / NUM_OSCS, 0.07);
+}
+
+function stopSound() {
+  if (!audioReady) return;
+  chordGain.gain.rampTo(0, 0.14);
+}
+
+// ── 피아노 발라드 악기 ──
+function ensureBalladSynth() {
+  if (balladPoly) return;
+  const rv = new Tone.Reverb({ decay: 1.4, wet: 0.15 });
+  rv.connect(Tone.Destination);
+  const lim = new Tone.Limiter(-3);
+  lim.connect(rv);
+  const g = new Tone.Gain(0.92);
+  g.connect(lim);
+  balladPoly = new Tone.PolySynth(Tone.Synth, {
+    volume: -5,
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 0.005, decay: 1.1, sustain: 0.10, release: 2.4 },
+  });
+  balladPoly.maxPolyphony = 8;
+  balladPoly.connect(g);
+}
+
+function midiToNoteName(m) {
+  const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  return NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+}
+
+function getChordMidi(root, acc, oct, quality, inv) {
+  const base = (oct + 1) * 12 + NOTE_PCS[root] + (ACC_OFFSET[acc] ?? 0);
+  const intervals = QUALITY_INTERVALS[quality] || [0, 4, 7];
+  let notes = intervals.map(i => base + i);
+  const n = Math.min(inv || 0, notes.length - 1);
+  for (let v = 0; v < n; v++) {
+    const minN = Math.min(...notes);
+    notes[notes.indexOf(minN)] += 12;
+    notes.sort((a, b) => a - b);
+  }
+  return notes;
+}
+
+function playBalladPiano(root, acc, oct, quality, inv) {
+  ensureBalladSynth();
+  const midiNotes = getChordMidi(root, acc, oct, quality, inv);
+  const noteNames = midiNotes.map(midiToNoteName);
+  // 베이스: 루트음 한 옥타브 아래
+  const bassOct = Math.max(1, oct - 1);
+  const bassMidi = (bassOct + 1) * 12 + NOTE_PCS[root] + (ACC_OFFSET[acc] ?? 0);
+  const bassName = midiToNoteName(bassMidi);
+  const barDur = (60 / autoBpm) * 4;
+  const noteDur = Math.max(0.3, barDur * 0.54);
+  const now = Tone.now() + 0.01;
+  // 베이스 먼저
+  balladPoly.triggerAttackRelease(bassName, noteDur * 1.12, now, 0.90);
+  // 코드 롤 (20ms 간격)
+  noteNames.forEach((note, i) => {
+    const vel = Math.max(0.42, 0.80 - i * 0.06);
+    balladPoly.triggerAttackRelease(note, noteDur * (1 - i * 0.03), now + 0.022 * (i + 1), vel);
+  });
+}
+
+// ── 라벨 ──
+function buildLabel(root, acc, quality) {
+  const a = acc === '#' ? '♯' : acc === 'b' ? '♭' : '';
+  const q = Object.prototype.hasOwnProperty.call(LABEL_MAP, quality) ? LABEL_MAP[quality] : quality;
+  return root + a + q;
+}
+
+function normalizeQualityText(raw) {
+  let q = (raw || '').trim();
+  q = q.replace(/[△Δ]/g, 'maj');
+  q = q.replace(/♭/g, 'b').replace(/♯/g, '#');
+  q = q.replace(/\s+/g, '');
+  const lower = q.toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(TEXT_QUALITY_ALIASES, q)) return TEXT_QUALITY_ALIASES[q];
+  if (Object.prototype.hasOwnProperty.call(TEXT_QUALITY_ALIASES, lower)) return TEXT_QUALITY_ALIASES[lower];
+  return null;
+}
+
+function parseTextChordToken(token) {
+  const raw = token.trim();
+  if (!raw) return null;
+  if (raw === '-' || raw === '—' || raw.toLowerCase() === 'x' || raw.toLowerCase() === 'rest') return null;
+  const head = raw.split('/')[0].trim();
+  const m = head.match(/^([A-Ga-g])([#b♯♭]?)(.*)$/);
+  if (!m) return undefined;
+  const root = m[1].toUpperCase();
+  const acc = m[2] === '#' || m[2] === '♯' ? '#' : (m[2] === 'b' || m[2] === '♭' ? 'b' : 'n');
+  const quality = normalizeQualityText(m[3]);
+  if (!quality || !QUALITY_INTERVALS[quality]) return undefined;
+  return {
+    root, acc, oct: bOct, quality, inv: 0,
+    label: buildLabel(root, acc, quality),
+    color: QUALITY_COLORS[quality] || '#00a85a',
+  };
+}
+
+function parseTextChords(text) {
+  const tokens = text.split(/[\s,]+/).map(t => t.trim()).filter(Boolean);
+  const parsed = [];
+  const invalid = [];
+  tokens.forEach(token => {
+    const chord = parseTextChordToken(token);
+    if (chord === undefined) invalid.push(token);
+    else parsed.push(chord);
+  });
+  return { parsed, invalid };
+}
+
+function addTextChords() {
+  const input = document.getElementById('codeTextInput');
+  const help = document.getElementById('codeTextHelp');
+  const { parsed, invalid } = parseTextChords(input.value);
+  if (!parsed.length && !invalid.length) return;
+  if (invalid.length) {
+    help.textContent = '인식 안 됨: ' + invalid.join(' ');
+    help.classList.add('error');
+    return;
+  }
+  const start = chords.length;
+  chords.push(...parsed);
+  input.value = '';
+  help.textContent = `${parsed.length}개 추가됨`;
+  help.classList.remove('error');
+  setSelectionRange(start, start + parsed.length - 1);
+  renderChordList();
+  updateCamDisplay();
+}
+
+function transposeChordItem(c, semis) {
+  if (!c) return;
+  const pc = (NOTE_PCS[c.root] + (ACC_OFFSET[c.acc] ?? 0) + 12) % 12;
+  const baseMidi = ((c.oct ?? 3) + 1) * 12 + pc;
+  const nextMidi = Math.max(24, Math.min(95, baseMidi + semis));
+  const nextPc = ((nextMidi % 12) + 12) % 12;
+  const preferFlat = c.acc === 'b';
+  const [root, acc] = (preferFlat ? PC_TO_FLAT : PC_TO_SHARP)[nextPc];
+  c.root = root;
+  c.acc = acc;
+  c.oct = Math.max(1, Math.min(6, Math.floor(nextMidi / 12) - 1));
+  c.label = buildLabel(c.root, c.acc, c.quality);
+}
+
+function transposeAllChords(semis) {
+  if (!chords.length) return;
+  chords.forEach(c => transposeChordItem(c, semis));
+  if (isSpaceHeld && currentIdx >= 0 && chords[currentIdx]) {
+    const c = chords[currentIdx];
+    playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  }
+  renderChordList();
+  updateCamDisplay();
+}
+
+// ── 빌더 UI ──
+function updatePreview() {
+  document.getElementById('previewName').textContent = buildLabel(bRoot, bAcc, bQuality);
+}
+
+function setupGroup(id, setter) {
+  document.getElementById(id).querySelectorAll('.tog').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(id).querySelectorAll('.tog').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      setter(btn.dataset.val);
+      updatePreview();
+    });
+  });
+}
+
+setupGroup('rootGrp', v => { bRoot = v; });
+setupGroup('accGrp',  v => { bAcc = v; });
+setupGroup('octGrp',  v => { bOct = parseInt(v); });
+setupGroup('invGrp',  v => { bInv = parseInt(v); });
+
+// ── 코드 카테고리 탭 ──
+const QUAL_CATS = {
+  '메이저':   ['maj', '5', 'aug', '6', '69', 'add9', 'maj7', 'maj9', 'maj11', 'maj13'],
+  '마이너':   ['m', 'm6', 'madd9', 'm7', 'm7b5', 'm9', 'm11', 'm13'],
+  '도미넌트': ['7', '9', '11', '13', 'aug7'],
+  'sus':      ['sus2', 'sus4', '7sus2', '7sus4'],
+  'dim':      ['dim', 'dim7'],
+};
+const QUAL_DISPLAY = { maj:'maj', m:'m', '5':'5', '7':'7', maj7:'maj7', m7:'m7',
+  m7b5:'m7♭5', dim7:'dim7', aug7:'aug7', '7sus4':'7sus4', '7sus2':'7sus2',
+  '6':'6', m6:'m6', '69':'6/9', '9':'9', maj9:'maj9', m9:'m9', add9:'add9', madd9:'madd9',
+  '11':'11', maj11:'maj11', m11:'m11', '13':'13', maj13:'maj13', m13:'m13',
+  sus2:'sus2', sus4:'sus4', dim:'dim', aug:'aug' };
+
+let activeCat = '메이저';
+
+function renderQualButtons() {
+  const grp = document.getElementById('qualGrp');
+  grp.innerHTML = '';
+  (QUAL_CATS[activeCat] || []).forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'tog' + (bQuality === q ? ' sel' : '');
+    btn.dataset.val = q;
+    btn.textContent = QUAL_DISPLAY[q] || q;
+    btn.addEventListener('click', () => {
+      bQuality = q;
+      grp.querySelectorAll('.tog').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      updatePreview();
+    });
+    grp.appendChild(btn);
+  });
+}
+
+document.getElementById('qualTabs').querySelectorAll('.qtab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.getElementById('qualTabs').querySelectorAll('.qtab').forEach(t => t.classList.remove('sel'));
+    tab.classList.add('sel');
+    activeCat = tab.dataset.cat;
+    renderQualButtons();
+  });
+});
+
+renderQualButtons();
+
+document.getElementById('previewPlayBtn').addEventListener('click', async () => {
+  await ensureAudio();
+  playSoundFrom(bRoot, bAcc, bOct, bQuality, bInv);
+  setTimeout(stopSound, 1300);
+});
+
+// ── 다음 실제 코드 인덱스 (null 건너뜀) ──
+function nextRealIdx(from) {
+  if (chords.length === 0) return -1;
+  let idx = (from + 1) % chords.length;
+  for (let i = 0; i < chords.length; i++) {
+    if (chords[idx] !== null) return idx;
+    idx = (idx + 1) % chords.length;
+  }
+  return -1; // 전부 빈칸
+}
+
+function prevRealIdx(from) {
+  if (chords.length === 0) return -1;
+  let idx = from - 1;
+  if (idx < 0) idx = chords.length - 1;
+  for (let i = 0; i < chords.length; i++) {
+    if (chords[idx] !== null) return idx;
+    idx = (idx - 1 + chords.length) % chords.length;
+  }
+  return -1;
+}
+
+function currentRealIdx() {
+  if (chords.length === 0) return -1;
+  if (currentIdx >= 0 && currentIdx < chords.length && chords[currentIdx] !== null) return currentIdx;
+  const from = currentIdx >= 0 && currentIdx < chords.length ? currentIdx - 1 : -1;
+  return nextRealIdx(from);
+}
+
+function cloneChord(c) {
+  return c === null ? null : JSON.parse(JSON.stringify(c));
+}
+
+function normalizeRange(start, end) {
+  if (start < 0 || end < 0 || start >= chords.length || end >= chords.length) return null;
+  return { start: Math.min(start, end), end: Math.max(start, end) };
+}
+
+function getSelectionRange() {
+  if (selectedRange) return normalizeRange(selectedRange.start, selectedRange.end);
+  if (selectedIdx >= 0 && selectedIdx < chords.length) return { start: selectedIdx, end: selectedIdx };
+  return null;
+}
+
+function isIdxSelected(idx) {
+  const r = getSelectionRange();
+  return !!r && idx >= r.start && idx <= r.end;
+}
+
+function setSelectionRange(start, end) {
+  const r = normalizeRange(start, end);
+  if (!r) {
+    clearSelection();
+    return;
+  }
+  selectedRange = r;
+  selectedIdx = r.start;
+  selectionAnchor = start;
+}
+
+function selectChordIdx(idx, extend = false) {
+  if (idx < 0 || idx >= chords.length) {
+    clearSelection();
+    return;
+  }
+  if (extend && selectionAnchor >= 0 && selectionAnchor < chords.length) {
+    selectedRange = normalizeRange(selectionAnchor, idx);
+    selectedIdx = idx;
+    return;
+  }
+  selectedIdx = idx;
+  selectionAnchor = idx;
+  selectedRange = { start: idx, end: idx };
+}
+
+function clearSelection() {
+  selectedIdx = -1;
+  selectionAnchor = -1;
+  selectedRange = null;
+}
+
+function ensureDragGhost() {
+  let ghost = document.getElementById('dragGhost');
+  if (!ghost) {
+    ghost = document.createElement('div');
+    ghost.id = 'dragGhost';
+    ghost.className = 'drag-ghost hidden';
+    document.body.appendChild(ghost);
+  }
+  return ghost;
+}
+
+function remapIdxAfterMove(idx, from, to) {
+  if (idx < 0) return idx;
+  if (idx === from) return to;
+  if (from < to && idx > from && idx <= to) return idx - 1;
+  if (from > to && idx >= to && idx < from) return idx + 1;
+  return idx;
+}
+
+function remapIdxAfterRangeMove(idx, start, end, to, insertAt) {
+  if (idx < 0) return idx;
+  const count = end - start + 1;
+  if (idx >= start && idx <= end) return insertAt + (idx - start);
+  if (to > end && idx > end && idx <= to) return idx - count;
+  if (to < start && idx >= to && idx < start) return idx + count;
+  return idx;
+}
+
+function moveChordRange(start, end, to) {
+  const r = normalizeRange(start, end);
+  if (!r || to < 0 || to >= chords.length || (to >= r.start && to <= r.end)) return false;
+  const count = r.end - r.start + 1;
+  const prevCurrent = currentIdx;
+  const block = chords.splice(r.start, count);
+  const insertAt = to > r.end ? to - count + 1 : to;
+  chords.splice(insertAt, 0, ...block);
+  currentIdx = remapIdxAfterRangeMove(prevCurrent, r.start, r.end, to, insertAt);
+  setSelectionRange(insertAt, insertAt + count - 1);
+  return true;
+}
+
+function removeChordBox(idx) {
+  chords.splice(idx, 1);
+  if (currentIdx > idx) currentIdx -= 1;
+  else if (currentIdx >= chords.length) currentIdx = chords.length - 1;
+  clearSelection();
+}
+
+function changeChordOct(idx, delta) {
+  const c = chords[idx];
+  if (!c) return;
+  c.oct = Math.max(1, Math.min(6, (c.oct ?? 3) + delta));
+  if (isSpaceHeld && idx === currentIdx) playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  renderChordList();
+  updateCamDisplay();
+}
+
+function copySelectedChord() {
+  const r = getSelectionRange();
+  if (!r) return false;
+  chordClipboard = chords.slice(r.start, r.end + 1).map(cloneChord);
+  return true;
+}
+
+function pasteChordBox() {
+  if (!Array.isArray(chordClipboard) || chordClipboard.length === 0) return false;
+  const items = chordClipboard.map(cloneChord);
+  const r = getSelectionRange();
+  if (r) {
+    const removeCount = r.end - r.start + 1;
+    if (currentIdx >= r.start && currentIdx <= r.end) currentIdx = r.start;
+    else if (currentIdx > r.end) currentIdx += items.length - removeCount;
+    if (r.start === r.end) {
+      items.forEach((item, i) => {
+        const idx = r.start + i;
+        if (idx < chords.length) chords[idx] = item;
+        else chords.push(item);
+      });
+    } else {
+      chords.splice(r.start, removeCount, ...items);
+    }
+    setSelectionRange(r.start, r.start + items.length - 1);
+  } else {
+    const start = chords.length;
+    chords.push(...items);
+    setSelectionRange(start, start + items.length - 1);
+  }
+  renderChordList();
+  updateCamDisplay();
+  return true;
+}
+
+function toggleLineBreakAtSelection() {
+  if (chordsPerRow !== 0) {
+    chordsPerRow = 0;
+    document.getElementById('cprSel').value = '0';
+  }
+  const r = getSelectionRange();
+  if (!r || r.start <= 0) return false;
+  const c = chords[r.start];
+  if (!c) return false;
+  c.lineBreakBefore = !c.lineBreakBefore;
+  renderChordList();
+  return true;
+}
+
+function startDragWatch(e, idx, card) {
+  if (e.button !== 0) return;
+  if (e.shiftKey) return;
+  if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap')) return;
+  if (!isIdxSelected(idx)) selectChordIdx(idx);
+  const range = getSelectionRange() || { start: idx, end: idx };
+  dragWatch = { idx, range, card, startX: e.clientX, startY: e.clientY, started: false };
+}
+
+// ── 코드 목록 렌더 ──
+function renderChordList() {
+  const container = document.getElementById('chordItems');
+  document.getElementById('chordCount').textContent = chords.length + '개';
+
+  if (chords.length === 0) {
+    container.innerHTML = '<div class="empty-msg">코드를 추가하면 여기에 표시됩니다</div>';
+    return;
+  }
+
+  const readyIdx = currentRealIdx();
+  container.innerHTML = '';
+
+  const rows = [];
+  if (chordsPerRow > 0) {
+    for (let rowStart = 0; rowStart < chords.length; rowStart += chordsPerRow) {
+      rows.push({ start: rowStart, end: Math.min(rowStart + chordsPerRow, chords.length) });
+    }
+  } else {
+    let rowStart = 0;
+    for (let i = 1; i < chords.length; i++) {
+      if (chords[i] && chords[i].lineBreakBefore) {
+        rows.push({ start: rowStart, end: i });
+        rowStart = i;
+      }
+    }
+    rows.push({ start: rowStart, end: chords.length });
+  }
+
+  rows.forEach(({ start: rowStart, end: rowEnd }) => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'chord-row';
+
+    const numEl = document.createElement('span');
+    numEl.className = 'row-num';
+    numEl.textContent = rowStart + 1;
+    rowEl.appendChild(numEl);
+
+    const cardsEl = document.createElement('div');
+    cardsEl.className = 'row-cards';
+
+    for (let i = rowStart; i < rowEnd; i++) {
+      const c = chords[i];
+      const isActive = i === currentIdx && isSpaceHeld;
+      const isNext   = i === readyIdx && !isSpaceHeld;
+      const isSelected = isIdxSelected(i);
+      const breakClass = chordsPerRow === 0 && i > 0 && c && c.lineBreakBefore ? ' line-break-before' : '';
+
+      const card = document.createElement('div');
+      card.dataset.idx = i;
+
+      if (c === null) {
+        card.className = 'chord-card empty-card' + (isSelected ? ' selected' : '');
+        card.innerHTML = `
+          <span class="card-num">${i + 1}</span>
+          <span class="card-name">—</span>
+          <button class="del-btn" title="삭제">×</button>
+        `;
+      } else {
+        card.className = 'chord-card' + breakClass + (isActive ? ' active' : '') + (isNext ? ' next-up' : '') + (isSelected ? ' selected' : '');
+        if (isActive) {
+          card.style.borderColor = c.color;
+          card.style.backgroundColor = c.color + '20';
+          card.style.boxShadow = `0 0 16px ${c.color}55`;
+        }
+        card.innerHTML = `
+          <span class="card-num">${i + 1}</span>
+          <span class="card-name" style="color:${isActive ? c.color : ''}">${c.label}</span>
+          <button class="del-btn" title="삭제">×</button>
+        `;
+        const octWrap = document.createElement('div');
+        octWrap.className = 'card-oct-wrap';
+        const octUp = document.createElement('button');
+        octUp.className = 'oct-btn';
+        octUp.textContent = '▲';
+        octUp.title = '옥타브 올리기';
+        octUp.addEventListener('click', e => {
+          e.stopPropagation();
+          selectChordIdx(i);
+          changeChordOct(i, 1);
+        });
+        const octLbl = document.createElement('span');
+        octLbl.className = 'oct-label';
+        octLbl.textContent = c.oct ?? 3;
+        const octDn = document.createElement('button');
+        octDn.className = 'oct-btn';
+        octDn.textContent = '▼';
+        octDn.title = '옥타브 내리기';
+        octDn.addEventListener('click', e => {
+          e.stopPropagation();
+          selectChordIdx(i);
+          changeChordOct(i, -1);
+        });
+        octWrap.append(octUp, octLbl, octDn);
+        card.appendChild(octWrap);
+      }
+
+      card.querySelector('.del-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        removeChordBox(i);
+        renderChordList();
+        updateCamDisplay();
+      });
+      card.addEventListener('pointerdown', e => startDragWatch(e, i, card));
+      card.addEventListener('click', e => {
+        if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap')) return;
+        if (dragJustFinished) { dragJustFinished = false; return; }
+        selectChordIdx(i, e.shiftKey);
+        if (c !== null && !e.shiftKey) jumpTo(i);
+        else renderChordList();
+      });
+      cardsEl.appendChild(card);
+    }
+
+    rowEl.appendChild(cardsEl);
+    container.appendChild(rowEl);
+  });
+}
+
+document.getElementById('cprSel').addEventListener('change', e => {
+  chordsPerRow = parseInt(e.target.value);
+  renderChordList();
+});
+
+document.getElementById('breakBtn').addEventListener('click', () => {
+  toggleLineBreakAtSelection();
+});
+document.getElementById('transposeDownBtn').addEventListener('click', () => transposeAllChords(-1));
+document.getElementById('transposeUpBtn').addEventListener('click', () => transposeAllChords(1));
+
+document.getElementById('codeTextAddBtn').addEventListener('click', addTextChords);
+document.getElementById('codeTextInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    addTextChords();
+  }
+});
+
+document.getElementById('emptyBtn').addEventListener('click', () => {
+  chords.push(null);
+  selectChordIdx(chords.length - 1);
+  renderChordList();
+  updateCamDisplay();
+});
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  chords.push({
+    root: bRoot, acc: bAcc, oct: bOct, quality: bQuality, inv: bInv,
+    label: buildLabel(bRoot, bAcc, bQuality),
+    color: QUALITY_COLORS[bQuality] || '#00a85a',
+  });
+  selectChordIdx(chords.length - 1);
+  renderChordList();
+  updateCamDisplay();
+});
+
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  if (!chords.length) return;
+  chords = []; currentIdx = -1; clearSelection(); isSpaceHeld = false;
+  stopSound();
+  renderChordList();
+  updateCamDisplay();
+  const btn = document.getElementById('spaceBtn');
+  btn.classList.remove('pressed');
+  btn.textContent = 'SPACE';
+});
+
+// ── 자동재생 ──
+function autoPlayStep() {
+  if (!autoPlayActive || chords.length === 0) return;
+  const idx = currentRealIdx();
+  if (idx === -1) { stopAutoPlay(); return; }
+  currentIdx = idx;
+  const c = chords[currentIdx];
+  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  isSpaceHeld = true;
+  renderChordList();
+  updateCamDisplay();
+  const spBtn = document.getElementById('spaceBtn');
+  spBtn.classList.add('pressed');
+  spBtn.textContent = c.label;
+  const barMs = (60 / autoBpm) * 4 * 1000;
+  // 다음 코드로 전환 (끝 80ms 전에 페이드)
+  autoPlayTimer = setTimeout(() => {
+    if (!autoPlayActive) return;
+    if (currentSound !== 'balladpiano') stopSound();
+    isSpaceHeld = false;
+    currentIdx = nextRealIdx(currentIdx);
+    renderChordList();
+    updateCamDisplay();
+    autoPlayTimer = setTimeout(() => {
+      if (!autoPlayActive) return;
+      autoPlayStep();
+    }, 80);
+  }, Math.max(200, barMs - 80));
+}
+
+function startAutoPlay() {
+  if (autoPlayActive) { stopAutoPlay(); return; }
+  if (!chords.length) return;
+  ensureAudio().then(() => {
+    autoPlayActive = true;
+    document.getElementById('autoPlayBtn').classList.add('active');
+    document.getElementById('autoPlayBtn').textContent = '⏹ 자동재생 중';
+    // currentIdx가 -1이면 첫 코드부터
+    if (currentIdx < 0 || currentIdx >= chords.length) currentIdx = -1;
+    autoPlayStep();
+  });
+}
+
+function stopAutoPlay() {
+  autoPlayActive = false;
+  clearTimeout(autoPlayTimer);
+  autoPlayTimer = null;
+  if (currentSound !== 'balladpiano') stopSound();
+  isSpaceHeld = false;
+  renderChordList();
+  updateCamDisplay();
+  const spBtn = document.getElementById('spaceBtn');
+  spBtn.classList.remove('pressed');
+  spBtn.textContent = 'SPACE';
+  const apBtn = document.getElementById('autoPlayBtn');
+  if (apBtn) { apBtn.classList.remove('active'); apBtn.textContent = '▶ 자동재생'; }
+}
+
+// ── 위치 이동 ──
+function stopIfPlaying() {
+  if (autoPlayActive) { stopAutoPlay(); return; }
+  if (!isSpaceHeld) return;
+  isSpaceHeld = false;
+  stopSound();
+  const btn = document.getElementById('spaceBtn');
+  btn.classList.remove('pressed');
+  btn.textContent = 'SPACE';
+}
+
+function goToStart() {
+  stopIfPlaying();
+  currentIdx = -1;
+  renderChordList();
+  updateCamDisplay();
+}
+
+function goBack() {
+  stopIfPlaying();
+  if (chords.length === 0) return;
+  const cur = currentRealIdx();
+  if (cur === -1) return;
+  currentIdx = prevRealIdx(cur);
+  renderChordList();
+  updateCamDisplay();
+}
+
+function goForward() {
+  stopIfPlaying();
+  if (chords.length === 0) return;
+  const cur = currentRealIdx();
+  if (cur === -1) return;
+  currentIdx = nextRealIdx(cur);
+  renderChordList();
+  updateCamDisplay();
+}
+
+function jumpTo(i) {
+  stopIfPlaying();
+  currentIdx = i;
+  renderChordList();
+  updateCamDisplay();
+}
+
+// ── 연주 ──
+async function onPress() {
+  if (autoPlayActive) { stopAutoPlay(); return; }
+  if (isSpaceHeld || chords.length === 0) return;
+  const idx = currentRealIdx();
+  if (idx === -1) return; // 전부 빈칸
+  await ensureAudio();
+  isSpaceHeld = true;
+  currentIdx = idx;
+  const c = chords[currentIdx];
+  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  renderChordList();
+  updateCamDisplay();
+  const btn = document.getElementById('spaceBtn');
+  btn.classList.add('pressed');
+  btn.textContent = c.label;
+}
+
+function onRelease() {
+  if (!isSpaceHeld) return;
+  isSpaceHeld = false;
+  stopSound();
+  renderChordList();
+  updateCamDisplay();
+  const btn = document.getElementById('spaceBtn');
+  btn.classList.remove('pressed');
+  btn.textContent = 'SPACE';
+}
+
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const key = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && key === 'c') {
+    if (copySelectedChord()) e.preventDefault();
+  } else if ((e.ctrlKey || e.metaKey) && key === 'v') {
+    if (pasteChordBox()) e.preventDefault();
+  } else if ((e.code === 'Space' || e.code === 'ArrowDown') && !e.repeat) {
+    e.preventDefault(); onPress();
+  } else if ((e.code === 'ArrowRight' || key === 'f') && !e.repeat) {
+    e.preventDefault(); goForward();
+  } else if ((e.code === 'ArrowLeft' || e.code === 'Backspace' || key === 'd') && !e.repeat) {
+    e.preventDefault(); goBack();
+  }
+});
+window.addEventListener('keyup', e => {
+  if (e.code === 'Space') { e.preventDefault(); onRelease(); }
+});
+
+window.addEventListener('pointermove', e => {
+  if (!dragWatch) return;
+  const dx = e.clientX - dragWatch.startX;
+  const dy = e.clientY - dragWatch.startY;
+  if (!dragWatch.started && Math.hypot(dx, dy) < 8) return;
+
+  if (!dragWatch.started) {
+    dragWatch.started = true;
+    dragState = { start: dragWatch.range.start, end: dragWatch.range.end, to: dragWatch.idx };
+    dragWatch.card.classList.add('dragging');
+    const ghost = ensureDragGhost();
+    const count = dragWatch.range.end - dragWatch.range.start + 1;
+    ghost.textContent = count > 1 ? `${count}개 이동` : (chords[dragWatch.idx] ? chords[dragWatch.idx].label : '빈칸');
+    ghost.classList.remove('hidden');
+  }
+
+  const ghost = ensureDragGhost();
+  ghost.style.left = (e.clientX + 14) + 'px';
+  ghost.style.top = (e.clientY - 10) + 'px';
+  document.querySelectorAll('.chord-card.drop-target').forEach(el => el.classList.remove('drop-target'));
+
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const target = el?.closest('.chord-card');
+  const to = target ? parseInt(target.dataset.idx, 10) : -1;
+  if (target && to >= 0 && dragState) {
+    dragState.to = to;
+    if (to < dragState.start || to > dragState.end) target.classList.add('drop-target');
+  }
+});
+
+window.addEventListener('pointerup', () => {
+  if (!dragWatch) return;
+  const didDrag = dragWatch.started;
+  if (dragState && dragState.to >= 0 && moveChordRange(dragState.start, dragState.end, dragState.to)) {
+    renderChordList();
+    updateCamDisplay();
+  }
+  ensureDragGhost().classList.add('hidden');
+  document.querySelectorAll('.chord-card.dragging,.chord-card.drop-target').forEach(el => {
+    el.classList.remove('dragging', 'drop-target');
+  });
+  dragWatch = null;
+  dragState = null;
+  if (didDrag) {
+    dragJustFinished = true;
+    setTimeout(() => { dragJustFinished = false; }, 0);
+  }
+});
+
+const spaceBtn = document.getElementById('spaceBtn');
+spaceBtn.addEventListener('pointerdown', e => { spaceBtn.setPointerCapture(e.pointerId); onPress(); });
+spaceBtn.addEventListener('pointerup', () => onRelease());
+spaceBtn.addEventListener('pointercancel', () => onRelease());
+
+document.getElementById('resetBtn').addEventListener('click', goToStart);
+document.getElementById('backBtn').addEventListener('click', goBack);
+
+// ── 저장 / 불러오기 ──
+function getSaves() { try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); } catch { return []; } }
+function putSaves(arr) { localStorage.setItem(SAVES_KEY, JSON.stringify(arr)); }
+
+function saveToSlot(name) {
+  const saves = getSaves();
+  const idx = saves.findIndex(s => s.name === name);
+  const entry = { name, date: new Date().toLocaleString('ko-KR'), chords: JSON.parse(JSON.stringify(chords)) };
+  if (idx >= 0) saves[idx] = entry; else saves.push(entry);
+  putSaves(saves);
+}
+
+function loadFromSlot(name) {
+  const entry = getSaves().find(s => s.name === name);
+  if (!entry) return;
+  chords = JSON.parse(JSON.stringify(entry.chords));
+  currentIdx = -1; clearSelection(); isSpaceHeld = false;
+  stopSound();
+  renderChordList();
+  updateCamDisplay();
+  document.getElementById('spaceBtn').classList.remove('pressed');
+  document.getElementById('spaceBtn').textContent = 'SPACE';
+  document.getElementById('projectModal').classList.add('hidden');
+}
+
+function deleteSlot(name) {
+  putSaves(getSaves().filter(s => s.name !== name));
+  renderSaveModal();
+}
+
+function renderSaveModal() {
+  const list = document.getElementById('saveSlotList');
+  const saves = getSaves();
+  list.innerHTML = '';
+  if (!saves.length) {
+    list.innerHTML = '<div class="modal-empty">저장된 프로젝트가 없어요</div>';
+    return;
+  }
+  saves.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'modal-slot';
+    row.innerHTML = `
+      <div class="slot-info">
+        <span class="slot-name">${s.name}</span>
+        <span class="slot-date">${s.date} · ${s.chords.length}개 코드</span>
+      </div>
+      <button class="slot-overwrite" title="현재 상태로 덮어쓰기">💾</button>
+      <button class="slot-load">열기</button>
+      <button class="slot-del">✕</button>
+    `;
+    row.querySelector('.slot-overwrite').addEventListener('click', () => { saveToSlot(s.name); renderSaveModal(); });
+    row.querySelector('.slot-load').addEventListener('click', () => loadFromSlot(s.name));
+    row.querySelector('.slot-del').addEventListener('click', () => {
+      if (confirm(`"${s.name}"을(를) 삭제할까요?`)) deleteSlot(s.name);
+    });
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('projectBtn').addEventListener('click', () => {
+  renderSaveModal();
+  document.getElementById('projectModal').classList.remove('hidden');
+});
+document.getElementById('modalCloseBtn').addEventListener('click', () => {
+  document.getElementById('projectModal').classList.add('hidden');
+});
+document.getElementById('projectModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('projectModal'))
+    document.getElementById('projectModal').classList.add('hidden');
+});
+document.getElementById('saveNewBtn').addEventListener('click', () => {
+  const name = document.getElementById('saveNameInput').value.trim()
+    || `프로젝트 ${getSaves().length + 1}`;
+  saveToSlot(name);
+  document.getElementById('saveNameInput').value = '';
+  renderSaveModal();
+});
+document.getElementById('saveNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('saveNewBtn').click();
+});
+
+// ── 카메라 ──
+let _camStream = null, _wakeLock = null;
+
+function updateCamDisplay() {
+  const nameEl = document.getElementById('camChordName');
+  const numEl  = document.getElementById('camChordNum');
+  if (!nameEl) return;
+
+  const cur = currentRealIdx();
+  if (isSpaceHeld && cur !== -1) {
+    const c = chords[cur];
+    nameEl.textContent = c.label;
+    nameEl.style.color = c.color;
+    nameEl.classList.add('playing');
+    if (numEl) numEl.textContent = `${cur + 1} / ${chords.length}`;
+  } else if (chords.length > 0) {
+    const label = cur !== -1 ? chords[cur].label : '—';
+    nameEl.textContent = label;
+    nameEl.style.color = 'rgba(255,255,255,0.28)';
+    nameEl.classList.remove('playing');
+    if (numEl) numEl.textContent = cur !== -1 ? `현재 → ${cur + 1}번` : '';
+  } else {
+    nameEl.textContent = '—';
+    nameEl.style.color = 'rgba(255,255,255,0.28)';
+    nameEl.classList.remove('playing');
+    if (numEl) numEl.textContent = '';
+  }
+}
+
+document.getElementById('camBtn').addEventListener('click', async () => {
+  try {
+    _camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    document.getElementById('camVideo').srcObject = _camStream;
+    document.getElementById('camOverlay').classList.remove('hidden');
+    if ('wakeLock' in navigator) {
+      try { _wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+    }
+    updateCamDisplay();
+  } catch(e) {
+    alert('카메라 권한이 필요해요.\n' + e.message);
+  }
+});
+
+document.getElementById('camExitBtn').addEventListener('click', () => {
+  if (_camStream) { _camStream.getTracks().forEach(t => t.stop()); _camStream = null; }
+  if (_wakeLock)  { try { _wakeLock.release(); } catch(e) {} _wakeLock = null; }
+  document.getElementById('camVideo').srcObject = null;
+  document.getElementById('camOverlay').classList.add('hidden');
+});
+
+// ── 자동재생 / 사운드 컨트롤 ──
+document.getElementById('soundSel').addEventListener('change', e => {
+  currentSound = e.target.value;
+});
+document.getElementById('bpmDown').addEventListener('click', () => {
+  autoBpm = Math.max(40, autoBpm - 5);
+  document.getElementById('bpmDisplay').textContent = autoBpm;
+});
+document.getElementById('bpmUp').addEventListener('click', () => {
+  autoBpm = Math.min(240, autoBpm + 5);
+  document.getElementById('bpmDisplay').textContent = autoBpm;
+});
+document.getElementById('autoPlayBtn').addEventListener('click', startAutoPlay);
+
+// ── 초기화 ──
+updatePreview();
+renderChordList();
+</script>
+
+</body>
+</html>
