@@ -412,11 +412,8 @@
     }
     .nav-btn:hover { background: rgba(0,168,90,0.08); }
     .nav-btn:active { transform: scale(0.95); }
-    .nav-btn.nav-play { background: var(--surface2); border-color: var(--border); }
-    .nav-btn.nav-play.pressed { background: var(--accent); border-color: var(--accent); color: #fff; }
     .nav-icon { font-size: 1.1rem; line-height: 1; }
     .nav-lbl { font-size: 0.58rem; color: var(--muted); font-weight: 500; }
-    .nav-btn.nav-play .nav-lbl { color: inherit; opacity: 0.7; }
 
     .space-hint {
       text-align: center; font-size: 0.68rem; color: var(--muted); margin-bottom: 7px;
@@ -710,10 +707,6 @@
       <button class="nav-btn" id="backBtn">
         <span class="nav-icon">◀</span>
         <span class="nav-lbl">이전 (d)</span>
-      </button>
-      <button class="nav-btn nav-play" id="currentBtn">
-        <span class="nav-icon">▶</span>
-        <span class="nav-lbl">현재</span>
       </button>
       <button class="nav-btn" id="nextBtn">
         <span class="nav-icon">▶▶</span>
@@ -1702,21 +1695,6 @@ document.getElementById('resetBtn').addEventListener('click', goToStart);
 document.getElementById('backBtn').addEventListener('click', goBack);
 document.getElementById('nextBtn').addEventListener('click', goForward);
 
-// 현재 재생 버튼 — 스페이스와 동일하게 누르는 동안 지속
-const currentBtn = document.getElementById('currentBtn');
-currentBtn.addEventListener('pointerdown', e => {
-  currentBtn.setPointerCapture(e.pointerId);
-  currentBtn.classList.add('pressed');
-  onPress();
-});
-currentBtn.addEventListener('pointerup', () => {
-  currentBtn.classList.remove('pressed');
-  onRelease();
-});
-currentBtn.addEventListener('pointercancel', () => {
-  currentBtn.classList.remove('pressed');
-  onRelease();
-});
 
 // ── 저장 / 불러오기 ──
 function getSaves() { try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); } catch { return []; } }
