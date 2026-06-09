@@ -856,21 +856,33 @@ function stopSound() {
   chordGain.gain.rampTo(0, 0.14);
 }
 
-// ── 피아노 발라드 악기 ──
+// ── 피아노 발라드 악기 (Salamander Grand Piano) ──
+const PIANO_URLS = {
+  'A0':'A0.mp3','C1':'C1.mp3','D#1':'Ds1.mp3','F#1':'Fs1.mp3',
+  'A1':'A1.mp3','C2':'C2.mp3','D#2':'Ds2.mp3','F#2':'Fs2.mp3',
+  'A2':'A2.mp3','C3':'C3.mp3','D#3':'Ds3.mp3','F#3':'Fs3.mp3',
+  'A3':'A3.mp3','C4':'C4.mp3','D#4':'Ds4.mp3','F#4':'Fs4.mp3',
+  'A4':'A4.mp3','C5':'C5.mp3','D#5':'Ds5.mp3','F#5':'Fs5.mp3',
+  'A5':'A5.mp3','C6':'C6.mp3','D#6':'Ds6.mp3','F#6':'Fs6.mp3',
+  'A7':'A7.mp3','C8':'C8.mp3',
+};
+const PIANO_BASE = 'https://tonejs.github.io/audio/salamander/';
+let balladSamplerLoaded = false;
+
 function ensureBalladSynth() {
   if (balladPoly) return;
-  const rv = new Tone.Reverb({ decay: 1.4, wet: 0.15 });
+  const rv = new Tone.Reverb({ decay: 0.9, wet: 0.10 });
   rv.connect(Tone.Destination);
   const lim = new Tone.Limiter(-3);
   lim.connect(rv);
-  const g = new Tone.Gain(0.92);
+  const g = new Tone.Gain(0.72);
   g.connect(lim);
-  balladPoly = new Tone.PolySynth(Tone.Synth, {
-    volume: -5,
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.005, decay: 1.1, sustain: 0.10, release: 2.4 },
+  balladPoly = new Tone.Sampler({
+    urls: PIANO_URLS,
+    baseUrl: PIANO_BASE,
+    release: 1.2,
+    onload: () => { balladSamplerLoaded = true; },
   });
-  balladPoly.maxPolyphony = 8;
   balladPoly.connect(g);
 }
 
@@ -892,24 +904,43 @@ function getChordMidi(root, acc, oct, quality, inv) {
   return notes;
 }
 
+// 저음역 볼륨 보상 (minchord bassLoudComp 동일)
+function bassLoudComp(noteName) {
+  const m = noteName?.match(/(\d+)$/);
+  if (!m) return 1;
+  const oct = parseInt(m[1]);
+  if (oct <= 1) return 1.55;
+  if (oct === 2) return 1.30;
+  if (oct === 3) return 1.10;
+  return 1.0;
+}
+
 function playBalladPiano(root, acc, oct, quality, inv) {
   ensureBalladSynth();
   const midiNotes = getChordMidi(root, acc, oct, quality, inv);
   const noteNames = midiNotes.map(midiToNoteName);
-  // 베이스: 루트음 한 옥타브 아래
-  const bassOct = Math.max(1, oct - 1);
-  const bassMidi = (bassOct + 1) * 12 + NOTE_PCS[root] + (ACC_OFFSET[acc] ?? 0);
-  const bassName = midiToNoteName(bassMidi);
+  // 베이스: 가장 낮은 코드음을 한 옥타브 아래 (minchord 방식)
+  const bassName = noteNames[0].replace(/(\d+)$/, m => String(Math.max(1, parseInt(m) - 1)));
+  const upper = noteNames.length > 1 ? noteNames.slice(1) : [noteNames[0]];
   const barDur = (60 / autoBpm) * 4;
-  const noteDur = Math.max(0.3, barDur * 0.54);
+  const half = barDur / 2;
+  const baseVel = 0.70;
+  const SPREAD = 0.020; // 20ms 롤 — 피아니스트 손가락 느낌
   const now = Tone.now() + 0.01;
-  // 베이스 먼저
-  balladPoly.triggerAttackRelease(bassName, noteDur * 1.12, now, 0.90);
-  // 코드 롤 (20ms 간격)
-  noteNames.forEach((note, i) => {
-    const vel = Math.max(0.42, 0.80 - i * 0.06);
-    balladPoly.triggerAttackRelease(note, noteDur * (1 - i * 0.03), now + 0.022 * (i + 1), vel);
-  });
+  // 한 마디 두 번 타격 (minchord balladpiano 동일)
+  for (let hit = 0; hit < 2; hit++) {
+    const ht = now + hit * half;
+    const vs = hit === 0 ? 1.0 : 0.84; // 두 번째 타격 살짝 여리게
+    const noteDur = half * 1.10; // 다음 타격과 10% 겹쳐 레가토
+    const bv = Math.min(1.1, baseVel * vs * bassLoudComp(bassName));
+    // 베이스 먼저
+    balladPoly.triggerAttackRelease(bassName, noteDur, ht, bv);
+    // 코드 롤 (아래→위, 각 음 20ms 뒤)
+    upper.forEach((note, ni) => {
+      const cv = Math.min(1.0, baseVel * vs * (1 - ni * 0.05));
+      balladPoly.triggerAttackRelease(note, noteDur * 0.96, ht + SPREAD * (ni + 1), cv);
+    });
+  }
 }
 
 // ── 라벨 ──
