@@ -393,22 +393,30 @@
     .auto-btn:hover { background: rgba(0,168,90,0.08); }
     .auto-btn:active { transform: scale(0.95); }
     .auto-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .playback-controls { display: flex; gap: 6px; margin-bottom: 7px; }
-    .pb-btn {
+    .nav-btns { display: flex; gap: 5px; margin-bottom: 7px; }
+    .nav-btn {
       flex: 1;
       background: var(--surface2);
       border: 1px solid var(--border);
       color: var(--text);
-      border-radius: 8px;
-      padding: 7px 4px;
+      border-radius: 10px;
+      padding: 11px 4px;
       cursor: pointer;
-      font-size: 0.78rem;
-      font-weight: 500;
+      font-size: 0.80rem;
+      font-weight: 600;
       transition: background 0.1s, transform 0.08s;
       -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      line-height: 1.2;
     }
-    .pb-btn:hover { background: rgba(0,168,90,0.08); }
-    .pb-btn:active { transform: scale(0.95); }
+    .nav-btn:hover { background: rgba(0,168,90,0.08); }
+    .nav-btn:active { transform: scale(0.95); }
+    .nav-btn.nav-play { background: var(--surface2); border-color: var(--border); }
+    .nav-btn.nav-play.pressed { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .nav-icon { font-size: 1.1rem; line-height: 1; }
+    .nav-lbl { font-size: 0.58rem; color: var(--muted); font-weight: 500; }
+    .nav-btn.nav-play .nav-lbl { color: inherit; opacity: 0.7; }
 
     .space-hint {
       text-align: center; font-size: 0.68rem; color: var(--muted); margin-bottom: 7px;
@@ -694,11 +702,25 @@
       </div>
       <button class="auto-btn" id="autoPlayBtn">▶ 자동재생</button>
     </div>
-    <div class="playback-controls">
-      <button class="pb-btn" id="resetBtn">⏮ 처음으로</button>
-      <button class="pb-btn" id="backBtn">← 뒤로</button>
+    <div class="nav-btns">
+      <button class="nav-btn" id="resetBtn">
+        <span class="nav-icon">⏮</span>
+        <span class="nav-lbl">처음</span>
+      </button>
+      <button class="nav-btn" id="backBtn">
+        <span class="nav-icon">◀</span>
+        <span class="nav-lbl">이전 (d)</span>
+      </button>
+      <button class="nav-btn nav-play" id="currentBtn">
+        <span class="nav-icon">▶</span>
+        <span class="nav-lbl">현재</span>
+      </button>
+      <button class="nav-btn" id="nextBtn">
+        <span class="nav-icon">▶▶</span>
+        <span class="nav-lbl">다음 (f)</span>
+      </button>
     </div>
-    <div class="space-hint">SPACE · ↓ 현재 재생 &nbsp;/&nbsp; → · f 다음 &nbsp;/&nbsp; ← · d 이전 &nbsp;/&nbsp; Shift+클릭 범위 선택</div>
+    <div class="space-hint">SPACE · ↓ 현재 지속 재생 &nbsp;/&nbsp; Shift+클릭 범위 선택</div>
     <button class="space-btn" id="spaceBtn">SPACE</button>
   </footer>
 
@@ -1678,6 +1700,23 @@ spaceBtn.addEventListener('pointercancel', () => onRelease());
 
 document.getElementById('resetBtn').addEventListener('click', goToStart);
 document.getElementById('backBtn').addEventListener('click', goBack);
+document.getElementById('nextBtn').addEventListener('click', goForward);
+
+// 현재 재생 버튼 — 스페이스와 동일하게 누르는 동안 지속
+const currentBtn = document.getElementById('currentBtn');
+currentBtn.addEventListener('pointerdown', e => {
+  currentBtn.setPointerCapture(e.pointerId);
+  currentBtn.classList.add('pressed');
+  onPress();
+});
+currentBtn.addEventListener('pointerup', () => {
+  currentBtn.classList.remove('pressed');
+  onRelease();
+});
+currentBtn.addEventListener('pointercancel', () => {
+  currentBtn.classList.remove('pressed');
+  onRelease();
+});
 
 // ── 저장 / 불러오기 ──
 function getSaves() { try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); } catch { return []; } }
