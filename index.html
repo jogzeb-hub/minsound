@@ -285,6 +285,7 @@
       align-items: center;
       justify-content: center;
       width: var(--card-size); height: var(--card-size);
+      min-height: var(--card-size);
       background: var(--surface);
       border: 2px solid var(--border);
       border-radius: 10px;
@@ -358,6 +359,45 @@
     }
     .chord-card.dragging { opacity: 0.45; transform: scale(0.96); }
     .chord-card.drop-target { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    /* 가사 모드 */
+    .lyrics-mode .chord-card:not(.empty-card) { height: auto; justify-content: flex-start; padding-top: 6px; }
+    .lyric-input {
+      width: 100%; border: none; border-top: 1px solid rgba(0,168,90,0.18);
+      background: transparent; color: var(--text);
+      font-size: 0.6rem; text-align: center;
+      padding: 3px 4px 4px; outline: none; font-family: inherit;
+      border-radius: 0 0 8px 8px; margin-top: 4px;
+    }
+    .lyric-input::placeholder { color: var(--muted); opacity: 0.5; }
+    .lyrics-toggle-btn {
+      font-size: 0.65rem; padding: 2px 8px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer; color: var(--muted);
+      white-space: nowrap; line-height: 1.6;
+    }
+    .lyrics-toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* 카메라 가사 */
+    .cam-lyrics-area {
+      position: absolute; bottom: 96px; left: 0; right: 0;
+      text-align: center; z-index: 3; padding: 0 24px;
+      pointer-events: none;
+    }
+    .cam-lyrics-text {
+      color: #fff; font-size: 1.4rem; font-weight: 700;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+      min-height: 1.8em; line-height: 1.4;
+    }
+    .cam-lyrics-toggle {
+      position: absolute; bottom: 76px; right: 16px; z-index: 4;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.7); border-radius: 16px;
+      padding: 6px 14px; cursor: pointer; font-size: 0.78rem;
+    }
+    .cam-lyrics-toggle.active { color: #fff; background: rgba(0,168,90,0.4); border-color: var(--accent); }
     .drag-ghost {
       position: fixed;
       left: 0;
@@ -831,6 +871,7 @@
       <span class="list-title">코드 목록</span>
       <span class="list-count" id="chordCount">0개</span>
       <div class="list-header-right">
+        <button class="lyrics-toggle-btn" id="lyricsToggleBtn">🎤 가사</button>
         <span class="cpr-label">줄당</span>
         <select class="cpr-sel" id="cprSel">
           <option value="3">3</option>
@@ -1036,10 +1077,34 @@
 C Am F G
 
 코드 텍스트만 출력. 설명 없이.</div>
+      <div class="prompt-box" id="aiPromptLyrics" style="display:none">악보 이미지에서 코드와 가사를 함께 추출하여 minsound 형식으로 변환해라.
+
+## 출력 형식
+- 한 줄 출력, 스페이스로 토큰 구분
+- 각 토큰: 코드명:가사 형식 (해당 코드 시작 음절)
+- 가사 없는 코드(인트로·간주)는 코드명만 출력
+- 플랫은 b, 샵은 # 사용
+- 마디선, 반복기호, 섹션 표시 무시
+
+## 예시
+악보: C(사랑) Am(해) F(그대) G(여)
+출력: C:사랑 Am:해 F:그대 G:여
+
+악보: C(사랑해) G - Am F(여)
+출력: C:사랑해 G Am F:여
+
+## 규칙
+- 가사는 해당 코드 아래 시작 음절 기준
+- 음절이 코드 경계에 걸치면 더 가까운 코드에 배정
+- 옥타브 필요시 코드 뒤에 ^숫자 붙이고 그 뒤에 :가사
+  예: C^2:사랑 Am^4:해
+
+코드:가사 텍스트만 출력. 설명 없이.</div>
       <div class="prompt-modal-btns">
         <button class="copy-btn" id="copySimpleBtn">📋 Simple<br><span class="copy-sub">(코드순)</span></button>
         <button class="copy-btn" id="copyHoldBtn">📋 Hold<br><span class="copy-sub">(- 방식)</span></button>
         <button class="copy-btn" id="copySustainBtn">📋 Sustain<br><span class="copy-sub">(반복)</span></button>
+        <button class="copy-btn" id="copyLyricsBtn">📋 가사+코드<br><span class="copy-sub">(코드:가사)</span></button>
         <button class="prompt-close-btn" id="aiPromptCloseBtn">✕</button>
       </div>
     </div>
@@ -1072,6 +1137,10 @@ C Am F G
       </div>
       <div class="cam-chord-num" id="camChordNum"></div>
     </div>
+    <div class="cam-lyrics-area" id="camLyricsArea" style="display:none">
+      <div class="cam-lyrics-text" id="camLyricsText"></div>
+    </div>
+    <button class="cam-lyrics-toggle" id="camLyricsToggle">가사 OFF</button>
     <div class="cam-controls">
       <button class="cam-exit-btn" id="camResetBtn">⏮ 처음</button>
       <button class="cam-exit-btn" id="camExitBtn">✕ 나가기</button>
@@ -1144,6 +1213,10 @@ let chordClipboard = null;
 let dragWatch = null;
 let dragState = null;
 let dragJustFinished = false;
+
+// ── 가사 ──
+let lyricsVisible = false;
+let camLyricsOn = false;
 
 // ── 사운드 / 자동재생 ──
 let currentSound = 'basic';
@@ -1309,13 +1382,20 @@ function parseTextChordToken(token) {
   const raw = token.trim();
   if (!raw) return null;
   if (raw === '-' || raw === '—' || raw.toLowerCase() === 'x' || raw.toLowerCase() === 'rest') return null;
-  // 옥타브 접미사 추출: C^3, Am^2 등
+  // 가사 추출: C:가사, Am^3:가사 등 마지막 : 이후
   let tokenBody = raw;
+  let lyricsVal = '';
+  const lyricsColonIdx = raw.indexOf(':');
+  if (lyricsColonIdx > 0) {
+    lyricsVal = raw.slice(lyricsColonIdx + 1);
+    tokenBody = raw.slice(0, lyricsColonIdx);
+  }
+  // 옥타브 접미사 추출: C^3, Am^2 등
   let forcedOct = null;
-  const octMatch = raw.match(/\^([1-6])$/);
+  const octMatch = tokenBody.match(/\^([1-6])$/);
   if (octMatch) {
     forcedOct = parseInt(octMatch[1]);
-    tokenBody = raw.slice(0, raw.length - octMatch[0].length);
+    tokenBody = tokenBody.slice(0, tokenBody.length - octMatch[0].length);
   }
   const head = tokenBody.split('/')[0].trim();
   const m = head.match(/^([A-Ga-g])([#b♯♭]?)(.*)$/);
@@ -1328,6 +1408,7 @@ function parseTextChordToken(token) {
     root, acc, oct: forcedOct !== null ? forcedOct : bOct, quality, inv: 0,
     label: buildLabel(root, acc, quality),
     color: QUALITY_COLORS[quality] || '#00a85a',
+    lyrics: lyricsVal,
   };
 }
 
@@ -1660,6 +1741,7 @@ function startDragWatch(e, idx, card) {
 function renderChordList() {
   const container = document.getElementById('chordItems');
   document.getElementById('chordCount').textContent = chords.length + '개';
+  document.querySelector('.chord-list-section').classList.toggle('lyrics-mode', lyricsVisible);
 
   if (chords.length === 0) {
     container.innerHTML = '<div class="empty-msg">코드를 추가하면 여기에 표시됩니다</div>';
@@ -1751,6 +1833,18 @@ function renderChordList() {
         });
         octWrap.append(octUp, octLbl, octDn);
         card.appendChild(octWrap);
+
+        if (lyricsVisible) {
+          const lyricInput = document.createElement('input');
+          lyricInput.className = 'lyric-input';
+          lyricInput.type = 'text';
+          lyricInput.placeholder = '가사';
+          lyricInput.value = c.lyrics || '';
+          lyricInput.addEventListener('input', e => { chords[i].lyrics = e.target.value; updateCamDisplay(); });
+          lyricInput.addEventListener('click', e => e.stopPropagation());
+          lyricInput.addEventListener('pointerdown', e => e.stopPropagation());
+          card.appendChild(lyricInput);
+        }
       }
 
       card.querySelector('.del-btn').addEventListener('click', e => {
@@ -2182,6 +2276,13 @@ function updateCamDisplay() {
     nextEl.textContent = (ni >= 0 && ni !== cur && chords[ni]) ? chords[ni].label : '';
   }
 
+  // 카메라 가사
+  const lyricsTextEl = document.getElementById('camLyricsText');
+  if (lyricsTextEl) {
+    const lyric = (cur >= 0 && chords[cur]) ? (chords[cur].lyrics || '') : '';
+    lyricsTextEl.textContent = lyric;
+  }
+
   if ((isSpaceHeld || autoPlayActive) && cur !== -1) {
     const c = chords[cur];
     nameEl.textContent = c.label;
@@ -2245,6 +2346,21 @@ document.getElementById('bpmInput').addEventListener('input', e => {
 });
 document.getElementById('autoPlayBtn').addEventListener('click', startAutoPlay);
 
+// ── 가사 토글 ──
+document.getElementById('lyricsToggleBtn').addEventListener('click', () => {
+  lyricsVisible = !lyricsVisible;
+  document.getElementById('lyricsToggleBtn').classList.toggle('active', lyricsVisible);
+  renderChordList();
+});
+document.getElementById('camLyricsToggle').addEventListener('click', () => {
+  camLyricsOn = !camLyricsOn;
+  const btn = document.getElementById('camLyricsToggle');
+  const area = document.getElementById('camLyricsArea');
+  btn.textContent = camLyricsOn ? '가사 ON' : '가사 OFF';
+  btn.classList.toggle('active', camLyricsOn);
+  area.style.display = camLyricsOn ? '' : 'none';
+});
+
 // ── 사용법 모달 ──
 document.getElementById('helpBtn').addEventListener('click', () => {
   document.getElementById('helpModal').classList.remove('hidden');
@@ -2283,6 +2399,8 @@ document.getElementById('copyHoldBtn').addEventListener('click', () =>
   copyPrompt('copyHoldBtn', 'aiPromptHold', '📋 Hold<br><span class="copy-sub">(- 방식)</span>'));
 document.getElementById('copySustainBtn').addEventListener('click', () =>
   copyPrompt('copySustainBtn', 'aiPromptSustain', '📋 Sustain<br><span class="copy-sub">(반복)</span>'));
+document.getElementById('copyLyricsBtn').addEventListener('click', () =>
+  copyPrompt('copyLyricsBtn', 'aiPromptLyrics', '📋 가사+코드<br><span class="copy-sub">(코드:가사)</span>'));
 
 // ── 초기화 ──
 updatePreview();
