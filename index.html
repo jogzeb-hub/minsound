@@ -1330,14 +1330,14 @@ function getChordFreqs(root, acc, oct, quality, inv) {
   return notes.map(midiToFreq);
 }
 
-function playSoundFrom(root, acc, oct, quality, inv) {
+function playSoundFrom(root, acc, oct, quality, inv, hits = 1) {
   if (!audioReady) return;
   if (currentSound === 'balladpiano') {
-    playBalladPiano(root, acc, oct, quality, inv, autoPlayActive ? 2 : 1);
+    playBalladPiano(root, acc, oct, quality, inv, hits);
     return;
   }
   if (currentSound === 'ep1' || currentSound === 'ep2') {
-    playEP(currentSound, root, acc, oct, quality, inv, autoPlayActive ? 2 : 1);
+    playEP(currentSound, root, acc, oct, quality, inv, hits);
     return;
   }
   const freqs = getChordFreqs(root, acc, oct, quality, inv);
@@ -1681,6 +1681,14 @@ document.getElementById('previewPlayBtn').addEventListener('click', async () => 
   playSoundFrom(bRoot, bAcc, bOct, bQuality, bInv);
   setTimeout(stopSound, 1300);
 });
+
+// ── 코드가 점유하는 박자 수 (뒤따르는 null 포함) ──
+function chordBeatCount(idx) {
+  let count = 1;
+  let i = idx + 1;
+  while (i < chords.length && chords[i] === null) { count++; i++; }
+  return count;
+}
 
 // ── 다음 실제 코드 인덱스 (null 건너뜀) ──
 function nextRealIdx(from) {
@@ -2254,7 +2262,9 @@ function autoPlayStep() {
   if (idx === -1) { stopAutoPlay(); return; }
   currentIdx = idx;
   const c = chords[currentIdx];
-  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  const beats = chordBeatCount(idx);
+  const hits = Math.max(1, Math.floor(beats / 2));
+  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, hits);
   isSpaceHeld = true;
   renderChordList();
   updateCamDisplay();
@@ -2262,20 +2272,19 @@ function autoPlayStep() {
   const spBtn = document.getElementById('spaceBtn');
   spBtn.classList.add('pressed');
   spBtn.textContent = c.label;
-  const barMs = (60 / autoBpm) * 4 * 1000;
-  // 다음 코드로 전환 (끝 80ms 전에 페이드)
+  const totalMs = (60 / autoBpm) * beats * 1000;
   autoPlayTimer = setTimeout(() => {
     if (!autoPlayActive) return;
     if (currentSound === 'basic') stopSound();
     isSpaceHeld = false;
-    currentIdx = nextRealIdx(currentIdx);
+    currentIdx = (idx + beats) % chords.length;
     renderChordList();
     updateCamDisplay();
     autoPlayTimer = setTimeout(() => {
       if (!autoPlayActive) return;
       autoPlayStep();
     }, 80);
-  }, Math.max(200, barMs - 80));
+  }, Math.max(200, totalMs - 80));
 }
 
 function startAutoPlay() {
