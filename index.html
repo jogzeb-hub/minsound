@@ -2032,6 +2032,11 @@ function renderChordList() {
       card.addEventListener('click', e => {
         if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.lyric-input')) return;
         if (dragJustFinished) { dragJustFinished = false; return; }
+        if (e.shiftKey) {
+          selectChordIdx(i, true);
+          renderChordList();
+          return;
+        }
         saveHistory();
         chords[i] = bIsRest ? null : {
           root: bRoot, acc: bAcc, oct: bOct, quality: bQuality, inv: bInv,
