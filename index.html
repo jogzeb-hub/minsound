@@ -881,9 +881,24 @@
 - 범위 1~6 (낮음→높음), 예: C^2 Am^4
 
 코드 텍스트만 출력. 설명 없이.</div>
+      <div class="prompt-box" id="aiPromptSimple" style="display:none">악보 이미지에서 코드 진행을 추출하여 순서대로 나열해라.
+
+## 규칙
+- 코드가 바뀔 때만 한 번씩 출력 (박자·길이 무시)
+- 스페이스로 구분, 한 줄 출력
+- 마디선, 반복기호, 가사, 섹션 표시 무시
+- 코드 표기는 악보 그대로 사용
+- 플랫은 b, 샵은 # 사용
+- 옥타브 필요시 코드 뒤에 ^숫자 (범위 1~6, 기본 3)
+
+## 출력 예시
+C Am F G
+
+코드 텍스트만 출력. 설명 없이.</div>
       <div class="prompt-modal-btns">
-        <button class="copy-btn" id="copyHoldBtn">📋 Hold 복사 (- 방식)</button>
-        <button class="copy-btn" id="copySustainBtn">📋 Sustain 복사 (반복 방식)</button>
+        <button class="copy-btn" id="copySimpleBtn">📋 Simple (코드순)</button>
+        <button class="copy-btn" id="copyHoldBtn">📋 Hold (- 방식)</button>
+        <button class="copy-btn" id="copySustainBtn">📋 Sustain (반복)</button>
         <button class="prompt-close-btn" id="aiPromptCloseBtn">✕</button>
       </div>
     </div>
@@ -2105,10 +2120,12 @@ function copyPrompt(btnId, srcId, label) {
     setTimeout(() => { btn.textContent = label; btn.classList.remove('copied'); }, 2000);
   });
 }
+document.getElementById('copySimpleBtn').addEventListener('click', () =>
+  copyPrompt('copySimpleBtn', 'aiPromptSimple', '📋 Simple (코드순)'));
 document.getElementById('copyHoldBtn').addEventListener('click', () =>
-  copyPrompt('copyHoldBtn', 'aiPromptHold', '📋 Hold 복사 (- 방식)'));
+  copyPrompt('copyHoldBtn', 'aiPromptHold', '📋 Hold (- 방식)'));
 document.getElementById('copySustainBtn').addEventListener('click', () =>
-  copyPrompt('copySustainBtn', 'aiPromptSustain', '📋 Sustain 복사 (반복 방식)'));
+  copyPrompt('copySustainBtn', 'aiPromptSustain', '📋 Sustain (반복)'));
 
 // ── 초기화 ──
 updatePreview();
