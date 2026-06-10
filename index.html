@@ -1014,9 +1014,10 @@
             <span style="color:rgba(255,200,50,0.8);">빈 칸(<b>-</b>)은 앞 코드의 지속을 의미</span>하며, 자동재생 시 그 코드가 계속 울립니다.
           </div>
           <div class="help-rows">
-            <div class="help-row"><span class="help-row-key">1마디 C</span><span><span class="help-tag">C - - -</span> → C가 4박자 (4칸)</span></div>
-            <div class="help-row"><span class="help-row-key">2+2박</span><span><span class="help-tag">C - Am -</span> → C 2박, Am 2박</span></div>
-            <div class="help-row"><span class="help-row-key">1+1+2박</span><span><span class="help-tag">C Am G -</span> → C 1박, Am 1박, G 2박</span></div>
+            <div class="help-row"><span class="help-row-key">4/4 한 마디</span><span><span class="help-tag">C - - -</span> → C 4박</span></div>
+            <div class="help-row"><span class="help-row-key">3/4 한 마디</span><span><span class="help-tag">C - -</span> → C 3박</span></div>
+            <div class="help-row"><span class="help-row-key">2+2박 (4/4)</span><span><span class="help-tag">C - Am -</span> → C 2박, Am 2박</span></div>
+            <div class="help-row"><span class="help-row-key">2+1박 (3/4)</span><span><span class="help-tag">C - G</span> → C 2박, G 1박</span></div>
             <div class="help-row" style="margin-top:4px;"><span class="help-row-key" style="color:#e8a44a;">⚠️ 주의</span><span style="color:var(--muted);">줄당 칸 수(4·6·8…)는 화면 배치일 뿐, 박자와 무관합니다</span></div>
           </div>
         </div>
@@ -1070,7 +1071,7 @@
       <div class="prompt-box" id="aiPromptHold">악보 이미지에서 코드 진행을 추출하여 minsound 형식으로 변환해라.
 
 ## 기본 규칙
-- 박자는 4/4 기준
+- 악보에 표기된 박자 기호를 그대로 따름 (4/4, 3/4, 6/8 등)
 - 출력은 한 줄만
 - 코드와 박자 단위를 스페이스로 구분
 - 한 박자 = 1 토큰
@@ -1081,16 +1082,23 @@
 - 코드 표기는 악보 그대로 사용
 - 플랫은 b, 샵은 # 사용
 
-## 길이 표현 규칙
+## 길이 표현 규칙 (마디당 박자 수는 박자 기호에 따라 결정)
 
-한 마디 전체가 C → C - - -
+4/4 — 한 마디 전체가 C → C - - -
+3/4 — 한 마디 전체가 C → C - -
+6/8 — 한 마디 전체가 C (2분할) → C -
+2/4 — 한 마디 전체가 C → C -
+
+4/4 예시:
 1박자씩: | C | Am | F | G | → C Am F G
 2박자+2박자: | C      | Am     | → C - Am -
 3박자+1박자: | C          | G | → C - - G
-1박자+3박자: | C | G          | → C G - -
-2박자+1박자+1박자: | C      | G | Am | → C - G Am
 
-4마디 예시:
+3/4 예시:
+3박자: | C          | → C - -
+2박자+1박자: | C      | G | → C - G
+
+4마디 예시 (4/4):
 | C       | Am      | F       | G       |
 → C - - - Am - - - F - - - G - - -
 
@@ -1118,7 +1126,7 @@
       <div class="prompt-box" id="aiPromptSustain" style="display:none">악보 이미지에서 코드 진행을 추출하여 minsound 형식으로 변환해라.
 
 ## 기본 규칙
-- 박자는 4/4 기준
+- 악보에 표기된 박자 기호를 그대로 따름 (4/4, 3/4, 6/8 등)
 - 출력은 한 줄만
 - 코드와 박자 단위를 스페이스로 구분
 - 한 박자 = 1 토큰
@@ -1128,16 +1136,18 @@
 - 코드 표기는 악보 그대로 사용
 - 플랫은 b, 샵은 # 사용
 
-## 길이 표현 규칙
+## 길이 표현 규칙 (마디당 박자 수는 박자 기호에 따라 결정)
 
-한 마디 전체가 C → C C C C
+4/4 — 한 마디 전체가 C → C C C C
+3/4 — 한 마디 전체가 C → C C C
+2/4 — 한 마디 전체가 C → C C
+
+4/4 예시:
 1박자씩: | C | Am | F | G | → C Am F G
 2박자+2박자: | C      | Am     | → C C Am Am
 3박자+1박자: | C          | G | → C C C G
-1박자+3박자: | C | G          | → C G G G
-2박자+1박자+1박자: | C      | G | Am | → C C G Am
 
-4마디 예시:
+4마디 예시 (4/4):
 | C       | Am      | F       | G       |
 → C C C C Am Am Am Am F F F F G G G G
 
@@ -1188,7 +1198,7 @@ C Am F G
 
 ## 출력 형식
 - 한 줄 출력, 스페이스로 토큰 구분
-- 한 박자 = 1 토큰 (4/4 기준)
+- 한 박자 = 1 토큰 (악보의 박자 기호 기준 — 4/4, 3/4, 6/8 등 그대로 따름)
 - 코드가 시작되는 박자: 코드명"가사" 형식 (따옴표 안에 해당 코드 구간 가사 전체)
 - 같은 코드가 이어지는 박자: - 출력
 - 가사 없는 코드(인트로·간주)는 코드명만 출력 (따옴표 생략)
