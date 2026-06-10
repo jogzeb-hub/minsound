@@ -1332,14 +1332,14 @@ function ensureEPSynth(which) {
   if (which === 'ep2' && ep2Poly) return;
   const rv = new Tone.Reverb({ decay: 1.2, wet: 0.14 });
   rv.connect(Tone.Destination);
-  const lim = new Tone.Limiter(-3);
+  const lim = new Tone.Limiter(-2);
   lim.connect(rv);
-  const g = new Tone.Gain(0.82);
+  const g = new Tone.Gain(1.4);
   g.connect(lim);
   const sampler = new Tone.Sampler({
     urls: EP_URLS,
     baseUrl: which === 'ep1' ? EP1_BASE : EP2_BASE,
-    release: 3.0,
+    release: 1.5,
   });
   sampler.connect(g);
   if (which === 'ep1') ep1Poly = sampler;
@@ -1355,8 +1355,8 @@ function playEP(which, root, acc, oct, quality, inv, hits = 1) {
   const upper = noteNames.length > 1 ? noteNames.slice(1) : [noteNames[0]];
   const barDur = (60 / autoBpm) * 4;
   const half = barDur / 2;
-  const noteDur = half * 1.05;
-  const baseVel = 0.72;
+  const noteDur = barDur * 0.88;
+  const baseVel = 0.85;
   const SPREAD = 0.018;
   const now = Tone.now() + 0.01;
   for (let hit = 0; hit < hits; hit++) {
@@ -1380,7 +1380,7 @@ function ensureBalladSynth() {
   balladPoly = new Tone.Sampler({
     urls: PIANO_URLS,
     baseUrl: PIANO_BASE,
-    release: 2.5,
+    release: 1.5,
     onload: () => { balladSamplerLoaded = true; },
   });
   balladPoly.connect(g);
@@ -1429,7 +1429,7 @@ function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
   for (let hit = 0; hit < hits; hit++) {
     const ht = now + hit * half;
     const vs = hit === 0 ? 1.0 : 0.84;
-    const noteDur = half * 1.10;
+    const noteDur = barDur * 0.88;
     const bv = Math.min(1.1, baseVel * vs * bassLoudComp(bassName));
     balladPoly.triggerAttackRelease(bassName, noteDur, ht, bv);
     upper.forEach((note, ni) => {
