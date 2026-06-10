@@ -2470,7 +2470,7 @@ function putSaves(arr) { localStorage.setItem(SAVES_KEY, JSON.stringify(arr)); }
 function saveToSlot(name) {
   const saves = getSaves();
   const idx = saves.findIndex(s => s.name === name);
-  const entry = { name, date: new Date().toLocaleString('ko-KR'), chords: JSON.parse(JSON.stringify(chords)), bpm: autoBpm, sound: currentSound };
+  const entry = { name, date: new Date().toLocaleString('ko-KR'), chords: JSON.parse(JSON.stringify(chords)), bpm: autoBpm, sound: currentSound, cpr: chordsPerRow };
   if (idx >= 0) saves[idx] = entry; else saves.push(entry);
   putSaves(saves);
 }
@@ -2481,6 +2481,7 @@ function loadFromSlot(name) {
   chords = JSON.parse(JSON.stringify(entry.chords));
   if (entry.bpm) { autoBpm = entry.bpm; document.getElementById('bpmInput').value = autoBpm; }
   if (entry.sound) { currentSound = entry.sound; document.getElementById('soundSel').value = currentSound; }
+  if (entry.cpr != null) { chordsPerRow = entry.cpr; document.getElementById('cprSel').value = chordsPerRow; updateCardSize(); }
   currentIdx = -1; clearSelection(); isSpaceHeld = false;
   undoStack = []; redoStack = [];
   stopSound();
@@ -2510,7 +2511,7 @@ function renderSaveModal() {
     row.innerHTML = `
       <div class="slot-info">
         <span class="slot-name">${s.name}</span>
-        <span class="slot-date">${s.date} · ${s.chords.length}개 코드 · ${s.bpm || 80}BPM · ${s.sound || 'basic'}</span>
+        <span class="slot-date">${s.date} · ${s.chords.length}개 · ${s.bpm || 80}BPM · ${s.sound || 'basic'} · 줄당${s.cpr ?? 4}</span>
       </div>
       <button class="slot-overwrite" title="현재 상태로 덮어쓰기">💾</button>
       <button class="slot-load">열기</button>
