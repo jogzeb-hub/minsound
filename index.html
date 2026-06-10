@@ -647,7 +647,7 @@
       font-family: inherit;
       user-select: all;
     }
-    .prompt-modal-btns { display: flex; gap: 8px; }
+    .prompt-modal-btns { display: flex; gap: 8px; align-items: center; }
     .copy-btn {
       flex: 1;
       background: var(--accent); color: #fff;
@@ -657,6 +657,14 @@
     }
     .copy-btn:active { opacity: 0.85; }
     .copy-btn.copied { background: #2e9e5b; }
+    .prompt-close-btn {
+      flex: 0 0 auto;
+      background: rgba(255,255,255,0.06); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 14px; cursor: pointer;
+      font-size: 0.84rem; line-height: 1;
+    }
+    .prompt-close-btn:hover { background: rgba(255,255,255,0.1); }
   </style>
 </head>
 <body>
@@ -794,37 +802,89 @@
     <div class="prompt-modal-box">
       <div class="prompt-modal-head">🤖 악보 → 코드 AI 변환 프롬프트</div>
       <div class="prompt-modal-desc">아래 프롬프트를 복사해서 Claude·ChatGPT 등 AI에 악보 이미지와 함께 붙여넣으세요. 출력된 텍스트를 minsound 입력창에 바로 사용할 수 있습니다.</div>
-      <div class="prompt-box" id="aiPromptText">악보 이미지에서 코드 기호를 추출해서 minsound 텍스트 입력 형식으로 변환해줘.
+      <div class="prompt-box" id="aiPromptHold">악보 이미지에서 코드 진행을 추출하여 minsound 형식으로 변환해라.
 
-## 출력 규칙
-- 코드를 악보 순서대로 스페이스로 구분해서 나열
-- 한 마디 = 한 단위. 마디 안에 코드가 없으면 - 로 표시
-- 마디 구분선(|)은 표시하지 않음
-- 줄바꿈 없이 한 줄로 출력
-- 코드 표기는 영문 그대로 (C, Am, F#m7, Bbmaj7 등)
-- 플랫은 b, 샵은 # 사용 (♭→b, ♯→#)
+## 기본 규칙
+- 박자는 4/4 기준
+- 출력은 한 줄만
+- 코드와 박자 단위를 스페이스로 구분
+- 한 박자 = 1 토큰
+- 코드가 시작되는 박자에는 코드명을 출력
+- 같은 코드가 이어지는 나머지 박자는 - 출력
+- 마디선(|)은 출력하지 않음
+- 줄바꿈 금지
+- 코드 표기는 악보 그대로 사용
+- 플랫은 b, 샵은 # 사용
+
+## 길이 표현 규칙
+
+한 마디 전체가 C → C - - -
+1박자씩: | C | Am | F | G | → C Am F G
+2박자+2박자: | C      | Am     | → C - Am -
+3박자+1박자: | C          | G | → C - - G
+1박자+3박자: | C | G          | → C G - -
+2박자+1박자+1박자: | C      | G | Am | → C - G Am
+
+4마디 예시:
+| C       | Am      | F       | G       |
+→ C - - - Am - - - F - - - G - - -
+
+## 코드 추출 규칙
+- 코드 위치를 기준으로 실제 점유 박자를 추정
+- 마디 안에서 코드가 바뀌면 남은 박자를 계산하여 - 로 채움
+- 인트로, 벌스, 코러스 등 섹션 표시 무시
+- 가사, 리듬 표기, 반복기호 무시
+- 코드와 박자 정보만 출력
 
 ## 옥타브 표기 (선택사항)
-- 기본 옥타브는 3 (표기 생략 가능)
-- 악보에서 명확히 판단 가능한 경우에만 코드 뒤에 ^숫자 붙여서 표기
-- 예: C^2(낮은 도), Am^4(높은 라m), G7^3(기본 솔7)
-- 범위: 1~6 (1=매우 낮음, 6=매우 높음)
+- 기본 옥타브 3 (생략 가능)
+- 악보에서 판단 가능한 경우 코드 뒤에 ^숫자
+- 범위 1~6 (낮음→높음), 예: C^2 Am^4
 
-## 지원 코드 형식 예시
-C  Cm  C7  Cmaj7  Cm7  Cm7b5  Cdim  Cdim7  Caug
-Csus2  Csus4  C6  Cm6  C9  Cmaj9  Cm9  Cadd9
-F#m  Bb  Ebmaj7  Abm7
+코드 텍스트만 출력. 설명 없이.</div>
+      <div class="prompt-box" id="aiPromptSustain" style="display:none">악보 이미지에서 코드 진행을 추출하여 minsound 형식으로 변환해라.
 
-## 출력 예시 (옥타브 없음)
-C Am F G7 - Am F C G
+## 기본 규칙
+- 박자는 4/4 기준
+- 출력은 한 줄만
+- 코드와 박자 단위를 스페이스로 구분
+- 한 박자 = 1 토큰
+- 코드가 이어지는 박자에도 코드명을 반복 출력
+- 마디선(|)은 출력하지 않음
+- 줄바꿈 금지
+- 코드 표기는 악보 그대로 사용
+- 플랫은 b, 샵은 # 사용
 
-## 출력 예시 (옥타브 포함)
-C^3 Am^3 F^3 G7^3 - Am^2 F^2 C^3 G^3
+## 길이 표현 규칙
 
-악보 이미지를 분석해서 위 형식으로만 출력해. 설명 없이 코드 텍스트만.</div>
+한 마디 전체가 C → C C C C
+1박자씩: | C | Am | F | G | → C Am F G
+2박자+2박자: | C      | Am     | → C C Am Am
+3박자+1박자: | C          | G | → C C C G
+1박자+3박자: | C | G          | → C G G G
+2박자+1박자+1박자: | C      | G | Am | → C C G Am
+
+4마디 예시:
+| C       | Am      | F       | G       |
+→ C C C C Am Am Am Am F F F F G G G G
+
+## 코드 추출 규칙
+- 코드 위치를 기준으로 실제 점유 박자를 추정
+- 마디 안에서 코드가 바뀌면 남은 박자를 계산하여 코드명 반복
+- 인트로, 벌스, 코러스 등 섹션 표시 무시
+- 가사, 리듬 표기, 반복기호 무시
+- 코드와 박자 정보만 출력
+
+## 옥타브 표기 (선택사항)
+- 기본 옥타브 3 (생략 가능)
+- 악보에서 판단 가능한 경우 코드 뒤에 ^숫자
+- 범위 1~6 (낮음→높음), 예: C^2 Am^4
+
+코드 텍스트만 출력. 설명 없이.</div>
       <div class="prompt-modal-btns">
-        <button class="copy-btn" id="copyPromptBtn">📋 프롬프트 복사</button>
-        <button class="modal-close" style="flex:0 0 auto;margin:0;padding:10px 16px;" id="aiPromptCloseBtn">✕</button>
+        <button class="copy-btn" id="copyHoldBtn">📋 Hold 복사 (- 방식)</button>
+        <button class="copy-btn" id="copySustainBtn">📋 Sustain 복사 (반복 방식)</button>
+        <button class="prompt-close-btn" id="aiPromptCloseBtn">✕</button>
       </div>
     </div>
   </div>
@@ -1119,10 +1179,18 @@ function parseTextChords(text) {
   const tokens = text.split(/[\s,]+/).map(t => t.trim()).filter(Boolean);
   const parsed = [];
   const invalid = [];
+  let lastChord = null;
   tokens.forEach(token => {
     const chord = parseTextChordToken(token);
-    if (chord === undefined) invalid.push(token);
-    else parsed.push(chord);
+    if (chord === undefined) {
+      invalid.push(token);
+    } else if (chord === null && lastChord !== null) {
+      // hold: - 다음에 이전 코드 반복
+      parsed.push({ ...lastChord });
+    } else {
+      parsed.push(chord);
+      if (chord !== null) lastChord = chord;
+    }
   });
   return { parsed, invalid };
 }
@@ -2028,18 +2096,19 @@ document.getElementById('aiPromptModal').addEventListener('click', e => {
   if (e.target === document.getElementById('aiPromptModal'))
     document.getElementById('aiPromptModal').classList.add('hidden');
 });
-document.getElementById('copyPromptBtn').addEventListener('click', () => {
-  const text = document.getElementById('aiPromptText').textContent;
+function copyPrompt(btnId, srcId, label) {
+  const text = document.getElementById(srcId).textContent;
   navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copyPromptBtn');
+    const btn = document.getElementById(btnId);
     btn.textContent = '✅ 복사 완료!';
     btn.classList.add('copied');
-    setTimeout(() => {
-      btn.textContent = '📋 프롬프트 복사';
-      btn.classList.remove('copied');
-    }, 2000);
+    setTimeout(() => { btn.textContent = label; btn.classList.remove('copied'); }, 2000);
   });
-});
+}
+document.getElementById('copyHoldBtn').addEventListener('click', () =>
+  copyPrompt('copyHoldBtn', 'aiPromptHold', '📋 Hold 복사 (- 방식)'));
+document.getElementById('copySustainBtn').addEventListener('click', () =>
+  copyPrompt('copySustainBtn', 'aiPromptSustain', '📋 Sustain 복사 (반복 방식)'));
 
 // ── 초기화 ──
 updatePreview();
