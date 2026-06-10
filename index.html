@@ -337,6 +337,20 @@
     .chord-card:hover .del-btn { opacity: 0.65; }
     .del-btn:hover { color: var(--danger) !important; opacity: 1 !important; }
 
+    .card-inv-wrap {
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+      opacity: 0;
+      transition: opacity 0.1s;
+      z-index: 2;
+    }
+    .chord-card:not(.empty-card):hover .card-inv-wrap,
+    .chord-card.selected .card-inv-wrap { opacity: 1; }
+    .inv-label {
+      font-size: 0.48rem; color: var(--muted); font-weight: 800; line-height: 1;
+    }
     .card-oct-wrap {
       position: absolute;
       top: 3px;
@@ -1870,6 +1884,17 @@ function changeChordOct(idx, delta) {
   updateCamDisplay();
 }
 
+function changeChordInv(idx, delta) {
+  const c = chords[idx];
+  if (!c) return;
+  saveHistory();
+  const maxI = (QUALITY_INTERVALS[c.quality] || [0,4,7]).length - 1;
+  c.inv = Math.max(0, Math.min(maxI, (c.inv ?? 0) + delta));
+  if (isSpaceHeld && idx === currentIdx) playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  renderChordList();
+  updateCamDisplay();
+}
+
 function copySelectedChord() {
   const r = getSelectionRange();
   if (!r) return false;
@@ -1908,7 +1933,7 @@ function toggleLineBreakAtSelection() {
 function startDragWatch(e, idx, card) {
   if (e.button !== 0) return;
   if (e.shiftKey) return;
-  if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap')) return;
+  if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.card-inv-wrap')) return;
   if (!isIdxSelected(idx)) selectChordIdx(idx);
   const range = getSelectionRange() || { start: idx, end: idx };
   dragWatch = { idx, range, card, startX: e.clientX, startY: e.clientY, started: false };
@@ -2011,6 +2036,24 @@ function renderChordList() {
         octWrap.append(octUp, octLbl, octDn);
         card.appendChild(octWrap);
 
+        const invWrap = document.createElement('div');
+        invWrap.className = 'card-inv-wrap';
+        const invUp = document.createElement('button');
+        invUp.className = 'oct-btn';
+        invUp.textContent = '▲';
+        invUp.title = '전위 올리기';
+        invUp.addEventListener('click', e => { e.stopPropagation(); selectChordIdx(i); changeChordInv(i, 1); });
+        const invLbl = document.createElement('span');
+        invLbl.className = 'inv-label';
+        invLbl.textContent = ['근','1전','2전','3전'][c.inv ?? 0] || '근';
+        const invDn = document.createElement('button');
+        invDn.className = 'oct-btn';
+        invDn.textContent = '▼';
+        invDn.title = '전위 내리기';
+        invDn.addEventListener('click', e => { e.stopPropagation(); selectChordIdx(i); changeChordInv(i, -1); });
+        invWrap.append(invUp, invLbl, invDn);
+        card.appendChild(invWrap);
+
         if (lyricsVisible) {
           const lyricInput = document.createElement('input');
           lyricInput.className = 'lyric-input';
@@ -2032,7 +2075,7 @@ function renderChordList() {
       });
       card.addEventListener('pointerdown', e => startDragWatch(e, i, card));
       card.addEventListener('click', e => {
-        if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.lyric-input')) return;
+        if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.card-inv-wrap') || e.target.closest('.lyric-input')) return;
         if (dragJustFinished) { dragJustFinished = false; return; }
         if (e.shiftKey) {
           selectChordIdx(i, true);
