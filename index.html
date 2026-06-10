@@ -859,13 +859,13 @@
       <button class="act-btn preview-play" id="emptyBtn">— 빈칸</button>
     </div>
     <div class="text-code-row">
-      <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder="C Am F#m Bb  /  옥타브: C^2 Am^4  /  빈칸: -"></textarea>
+      <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder='C Am F#m Bb  /  가사: C"사랑 해요"  /  옥타브: C^2  /  빈칸: -'></textarea>
       <button class="code-text-btn-sec" id="codeTextExtractBtn">↓ 추출</button>
       <button class="code-text-btn-sec" id="codeTextHoldBtn">Hold 변환</button>
       <button class="code-text-btn-sec" id="codeTextMergeLyricsBtn">가사 병합</button>
       <button class="code-text-btn" id="codeTextAddBtn">입력</button>
     </div>
-    <div class="code-text-help" id="codeTextHelp">예: C Am F#m Bb  /  샵: F#m C#  /  플랫: Bb Eb  /  옥타브: C^2 G^4  /  빈칸: -</div>
+    <div class="code-text-help" id="codeTextHelp">예: C"사랑 해요" Am"그대" F G7  /  샵: F#m  /  플랫: Bb  /  옥타브: C^2  /  빈칸: -</div>
   </div>
 
   <div class="chord-list-section">
@@ -970,7 +970,7 @@
           <div class="help-stitle">🎤 가사 입력</div>
           <div class="help-rows">
             <div class="help-row"><span class="help-row-key">가사 토글</span><span>코드 목록 상단 <b>🎤 가사</b> 버튼 ON → 각 카드 아래 입력칸 표시</span></div>
-            <div class="help-row"><span class="help-row-key">텍스트 입력</span><span><span class="help-tag">C:사랑 Am:해 F:그대</span> 형식으로 코드+가사 동시 입력</span></div>
+            <div class="help-row"><span class="help-row-key">텍스트 입력</span><span><span class="help-tag">C"사랑 해요" Am"그대" F</span> 형식으로 코드+가사 동시 입력 (공백 포함 가능)</span></div>
             <div class="help-row"><span class="help-row-key">AI 가사 병합</span><span>🤖 AI변환 → <b>가사 병합 복사</b> → AI에 악보+프롬프트 → 출력 붙여넣기 → <b>가사 병합</b> 클릭</span></div>
             <div class="help-row"><span class="help-row-key">카메라 가사</span><span>카메라 모드에서 <b>가사 OFF→ON</b> 토글 시 현재 코드 가사 하단 표시</span></div>
           </div>
@@ -1094,30 +1094,31 @@ C Am F G
 
 ## 출력 형식
 - 한 줄 출력, 스페이스로 토큰 구분
-- 각 토큰: 코드명:가사 형식 (해당 코드 시작 음절)
+- 각 토큰: 코드명"가사" 형식 (해당 코드 시작 음절, 따옴표로 감쌈)
 - 가사 없는 코드(인트로·간주)는 코드명만 출력
 - 플랫은 b, 샵은 # 사용
 - 마디선, 반복기호, 섹션 표시 무시
 
 ## 예시
-악보: C(사랑) Am(해) F(그대) G(여)
-출력: C:사랑 Am:해 F:그대 G:여
+악보: C(사랑) Am(해요) F(그대) G(여)
+출력: C"사랑" Am"해요" F"그대" G"여"
 
-악보: C(사랑해) G - Am F(여)
-출력: C:사랑해 G Am F:여
+악보: C(사랑 해요) G - Am F(그대여)
+출력: C"사랑 해요" G Am F"그대여"
 
 ## 규칙
 - 가사는 해당 코드 아래 시작 음절 기준
 - 음절이 코드 경계에 걸치면 더 가까운 코드에 배정
-- 옥타브 필요시 코드 뒤에 ^숫자 붙이고 그 뒤에 :가사
-  예: C^2:사랑 Am^4:해
+- 가사에 공백이 있어도 따옴표 안에 그대로 포함
+- 옥타브 필요시 코드명^숫자"가사" 형식
+  예: C^2"사랑 해요" Am^4"그대"
 
-코드:가사 텍스트만 출력. 설명 없이.</div>
+코드"가사" 텍스트만 출력. 설명 없이.</div>
       <div class="prompt-modal-btns">
         <button class="copy-btn" id="copySimpleBtn">📋 Simple<br><span class="copy-sub">(코드순)</span></button>
         <button class="copy-btn" id="copyHoldBtn">📋 Hold<br><span class="copy-sub">(- 방식)</span></button>
         <button class="copy-btn" id="copySustainBtn">📋 Sustain<br><span class="copy-sub">(반복)</span></button>
-        <button class="copy-btn" id="copyLyricsBtn">📋 가사+코드<br><span class="copy-sub">(코드:가사)</span></button>
+        <button class="copy-btn" id="copyLyricsBtn">📋 가사+코드<br><span class="copy-sub">(코드"가사")</span></button>
         <button class="copy-btn" id="copyLyricsMergeBtn">📋 가사 병합<br><span class="copy-sub">(코드 포함)</span></button>
         <button class="prompt-close-btn" id="aiPromptCloseBtn">✕</button>
       </div>
@@ -1397,13 +1398,13 @@ function parseTextChordToken(token) {
   const raw = token.trim();
   if (!raw) return null;
   if (raw === '-' || raw === '—' || raw.toLowerCase() === 'x' || raw.toLowerCase() === 'rest') return null;
-  // 가사 추출: C:가사, Am^3:가사 등 마지막 : 이후
+  // 가사 추출: C"가사" 또는 Am^3"가사" 형식 (따옴표 안 공백 허용)
   let tokenBody = raw;
   let lyricsVal = '';
-  const lyricsColonIdx = raw.indexOf(':');
-  if (lyricsColonIdx > 0) {
-    lyricsVal = raw.slice(lyricsColonIdx + 1);
-    tokenBody = raw.slice(0, lyricsColonIdx);
+  const quoteMatch = raw.match(/^(.*?)"([^"]*)"(.*)$/);
+  if (quoteMatch) {
+    lyricsVal = quoteMatch[2];
+    tokenBody = quoteMatch[1] + quoteMatch[3];
   }
   // 옥타브 접미사 추출: C^3, Am^2 등
   let forcedOct = null;
@@ -1428,7 +1429,8 @@ function parseTextChordToken(token) {
 }
 
 function parseTextChords(text) {
-  const tokens = text.split(/[\s,]+/).map(t => t.trim()).filter(Boolean);
+  // 따옴표 안 공백 보존하면서 토큰 분리
+  const tokens = (text.match(/[^\s,"]*"[^"]*"|[^\s,]+/g) || []).filter(Boolean);
   const parsed = [];
   const invalid = [];
   tokens.forEach(token => {
@@ -1913,21 +1915,21 @@ function chordsToText() {
     const qual = c.quality === 'maj' ? '' : c.quality;
     let token = root + qual;
     if ((c.oct ?? 3) !== 3) token += '^' + c.oct;
-    if (c.lyrics) token += ':' + c.lyrics;
+    if (c.lyrics) token += '"' + c.lyrics + '"';
     return token;
   }).join(' ');
 }
 
 function mergeLyrics() {
   const input = document.getElementById('codeTextInput');
-  const tokens = input.value.trim().split(/[\s,]+/).filter(Boolean);
+  const tokens = (input.value.match(/[^\s,"]*"[^"]*"|[^\s,]+/g) || []).filter(Boolean);
   let changed = 0;
   for (let i = 0; i < tokens.length && i < chords.length; i++) {
     const token = tokens[i];
     if (token === '-' || !chords[i]) continue;
-    const colonIdx = token.indexOf(':');
-    if (colonIdx > 0) {
-      chords[i].lyrics = token.slice(colonIdx + 1);
+    const qm = token.match(/"([^"]*)"/);
+    if (qm) {
+      chords[i].lyrics = qm[1];
       changed++;
     }
   }
@@ -1950,19 +1952,20 @@ document.getElementById('copyLyricsMergeBtn').addEventListener('click', () => {
     alert('먼저 코드를 입력해주세요.');
     return;
   }
-  const prompt = `악보 이미지에서 각 코드에 맞는 가사를 추출해서 코드:가사 형식으로 붙여줘.
+  const prompt = `악보 이미지에서 각 코드에 맞는 가사를 추출해서 코드"가사" 형식으로 붙여줘.
 
 ## 현재 코드 목록
 ${chordText}
 
 ## 규칙
 - 위 코드 목록의 순서와 개수를 그대로 유지
-- 각 코드에 해당 가사 음절을 코드명:가사 형식으로 출력
+- 각 코드에 해당 가사 음절을 코드명"가사" 형식으로 출력 (따옴표로 감쌈)
+- 가사에 공백이 있어도 따옴표 안에 그대로 포함
 - 가사 없는 코드(인트로·간주)는 코드명만 출력
 - -는 빈 슬롯이므로 그대로 - 출력
 - 한 줄로 출력, 설명 없이
 
-코드:가사 텍스트만 출력.`;
+코드"가사" 텍스트만 출력.`;
   navigator.clipboard.writeText(prompt).then(() => {
     const btn = document.getElementById('copyLyricsMergeBtn');
     btn.innerHTML = '✅ 복사 완료!';
@@ -2509,7 +2512,7 @@ document.getElementById('copyHoldBtn').addEventListener('click', () =>
 document.getElementById('copySustainBtn').addEventListener('click', () =>
   copyPrompt('copySustainBtn', 'aiPromptSustain', '📋 Sustain<br><span class="copy-sub">(반복)</span>'));
 document.getElementById('copyLyricsBtn').addEventListener('click', () =>
-  copyPrompt('copyLyricsBtn', 'aiPromptLyrics', '📋 가사+코드<br><span class="copy-sub">(코드:가사)</span>'));
+  copyPrompt('copyLyricsBtn', 'aiPromptLyrics', '📋 가사+코드<br><span class="copy-sub">(코드"가사")</span>'));
 
 // ── 초기화 ──
 updatePreview();
