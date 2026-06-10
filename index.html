@@ -1005,6 +1005,22 @@
           </div>
         </div>
 
+        <!-- 박자 개념 -->
+        <div class="help-section" style="background:rgba(255,200,50,0.07);border-left:3px solid #e8a44a;padding-left:10px;border-radius:0 6px 6px 0;">
+          <div class="help-stitle" style="color:#e8a44a;">⏱ 박자 개념 — 칸 수 = 박자 길이</div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:7px;line-height:1.6;">
+            minsound의 각 슬롯(칸)은 <b style="color:var(--text);">모두 동일한 박자 길이</b>를 가집니다.<br>
+            화면상 위치나 칸의 크기가 아니라, <b style="color:var(--text);">슬롯 개수</b>로 실제 연주 길이가 결정됩니다.<br>
+            <span style="color:rgba(255,200,50,0.8);">빈 칸(<b>-</b>)은 앞 코드의 지속을 의미</span>하며, 자동재생 시 그 코드가 계속 울립니다.
+          </div>
+          <div class="help-rows">
+            <div class="help-row"><span class="help-row-key">1마디 C</span><span><span class="help-tag">C - - -</span> → C가 4박자 (4칸)</span></div>
+            <div class="help-row"><span class="help-row-key">2+2박</span><span><span class="help-tag">C - Am -</span> → C 2박, Am 2박</span></div>
+            <div class="help-row"><span class="help-row-key">1+1+2박</span><span><span class="help-tag">C Am G -</span> → C 1박, Am 1박, G 2박</span></div>
+            <div class="help-row" style="margin-top:4px;"><span class="help-row-key" style="color:#e8a44a;">⚠️ 주의</span><span style="color:var(--muted);">줄당 칸 수(4·6·8…)는 화면 배치일 뿐, 박자와 무관합니다</span></div>
+          </div>
+        </div>
+
         <!-- 재생 -->
         <div class="help-section">
           <div class="help-stitle">▶ 재생 & 이동</div>
@@ -1050,7 +1066,7 @@
   <div class="modal-overlay hidden" id="aiPromptModal">
     <div class="prompt-modal-box">
       <div class="prompt-modal-head">🤖 악보 → 코드 AI 변환 프롬프트</div>
-      <div class="prompt-modal-desc">아래 프롬프트를 복사해서 Claude·ChatGPT 등 AI에 악보 이미지와 함께 붙여넣으세요. 출력된 텍스트를 minsound 입력창에 바로 사용할 수 있습니다.<br><span style="color:var(--muted);font-size:0.78rem">⚠️ AI 코드 변환 결과는 완벽하지 않을 수 있습니다. 직접 확인 후 사용하세요.</span></div>
+      <div class="prompt-modal-desc">아래 프롬프트를 복사해서 Claude·ChatGPT 등 AI에 악보 이미지와 함께 붙여넣으세요. 출력된 텍스트를 minsound 입력창에 바로 사용할 수 있습니다.<br><span style="color:var(--muted);font-size:0.78rem">⚠️ AI 코드 변환 결과는 완벽하지 않을 수 있습니다. 직접 확인 후 사용하세요.</span><br><span style="color:#e8a44a;font-size:0.78rem">⏱ 각 슬롯(칸)은 동일한 박자 길이입니다. <b>-</b> 는 앞 코드의 지속을 의미하며, 칸 수로 박자 길이가 결정됩니다. 줄당 칸 수는 화면 배치일 뿐 박자와 무관합니다.</span></div>
       <div class="prompt-box" id="aiPromptHold">악보 이미지에서 코드 진행을 추출하여 minsound 형식으로 변환해라.
 
 ## 기본 규칙
