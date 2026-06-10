@@ -250,6 +250,18 @@
       padding-inline: 7px;
     }
     .transpose-btn:hover { background: rgba(0,168,90,0.08); }
+    .undo-btn {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+    .undo-btn:hover { background: rgba(255,255,255,0.08); }
+    .undo-btn:disabled { opacity: 0.3; cursor: default; }
 
     /* 코드 줄 */
     .chord-items { display: flex; flex-direction: column; gap: 0; }
@@ -885,6 +897,8 @@
         <span class="cpr-label">전조</span>
         <button class="transpose-btn" id="transposeDownBtn" title="전체 반음 내리기">-</button>
         <button class="transpose-btn" id="transposeUpBtn" title="전체 반음 올리기">+</button>
+        <button class="undo-btn" id="undoBtn" title="되돌리기 (Ctrl+Z)">↩</button>
+        <button class="undo-btn" id="redoBtn" title="다시 실행 (Ctrl+Y)">↪</button>
         <button class="break-btn" id="breakBtn" title="무제한 줄당에서 선택한 코드부터 새 줄 시작">줄바꿈</button>
         <button class="clear-all-btn" id="clearAllBtn">전체 삭제</button>
       </div>
@@ -1001,7 +1015,7 @@
   <div class="modal-overlay hidden" id="aiPromptModal">
     <div class="prompt-modal-box">
       <div class="prompt-modal-head">🤖 악보 → 코드 AI 변환 프롬프트</div>
-      <div class="prompt-modal-desc">아래 프롬프트를 복사해서 Claude·ChatGPT 등 AI에 악보 이미지와 함께 붙여넣으세요. 출력된 텍스트를 minsound 입력창에 바로 사용할 수 있습니다.</div>
+      <div class="prompt-modal-desc">아래 프롬프트를 복사해서 Claude·ChatGPT 등 AI에 악보 이미지와 함께 붙여넣으세요. 출력된 텍스트를 minsound 입력창에 바로 사용할 수 있습니다.<br><span style="color:var(--muted);font-size:0.78rem">⚠️ AI 코드 변환 결과는 완벽하지 않을 수 있습니다. 직접 확인 후 사용하세요.</span></div>
       <div class="prompt-box" id="aiPromptHold">악보 이미지에서 코드 진행을 추출하여 minsound 형식으로 변환해라.
 
 ## 기본 규칙
@@ -1224,6 +1238,8 @@ let bIsRest = false;
 
 // ── 목록 상태 ──
 let chords = [];
+let undoStack = [], redoStack = [];
+const MAX_UNDO = 50;
 let currentIdx = -1;
 let isSpaceHeld = false;
 let chordsPerRow = 4;
@@ -1514,6 +1530,7 @@ function addTextChords() {
     help.classList.add('error');
     return;
   }
+  saveHistory();
   const start = chords.length;
   chords.push(...parsed);
   input.value = '';
@@ -1540,6 +1557,7 @@ function transposeChordItem(c, semis) {
 
 function transposeAllChords(semis) {
   if (!chords.length) return;
+  saveHistory();
   chords.forEach(c => transposeChordItem(c, semis));
   if (isSpaceHeld && currentIdx >= 0 && chords[currentIdx]) {
     const c = chords[currentIdx];
@@ -1737,6 +1755,7 @@ function remapIdxAfterRangeMove(idx, start, end, to, insertAt) {
 function moveChordRange(start, end, to) {
   const r = normalizeRange(start, end);
   if (!r || to < 0 || to >= chords.length || (to >= r.start && to <= r.end)) return false;
+  saveHistory();
   const count = r.end - r.start + 1;
   const prevCurrent = currentIdx;
   const block = chords.splice(r.start, count);
@@ -1754,9 +1773,41 @@ function removeChordBox(idx) {
   clearSelection();
 }
 
+function saveHistory() {
+  undoStack.push(JSON.parse(JSON.stringify(chords)));
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack = [];
+}
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.parse(JSON.stringify(chords)));
+  chords = undoStack.pop();
+  currentIdx = -1; clearSelection();
+  renderChordList(); updateCamDisplay();
+}
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.parse(JSON.stringify(chords)));
+  chords = redoStack.pop();
+  currentIdx = -1; clearSelection();
+  renderChordList(); updateCamDisplay();
+}
+function deleteOrClear(idx) {
+  saveHistory();
+  if (chords[idx] !== null) {
+    chords[idx] = null;
+  } else {
+    chords.splice(idx, 1);
+    if (currentIdx > idx) currentIdx -= 1;
+    else if (currentIdx >= chords.length) currentIdx = chords.length - 1;
+    clearSelection();
+  }
+}
+
 function changeChordOct(idx, delta) {
   const c = chords[idx];
   if (!c) return;
+  saveHistory();
   c.oct = Math.max(1, Math.min(6, (c.oct ?? 3) + delta));
   if (isSpaceHeld && idx === currentIdx) playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
   renderChordList();
@@ -1772,6 +1823,7 @@ function copySelectedChord() {
 
 function pasteChordBox() {
   if (!Array.isArray(chordClipboard) || chordClipboard.length === 0) return false;
+  saveHistory();
   const items = chordClipboard.map(cloneChord);
   const r = getSelectionRange();
   if (r) {
@@ -1933,7 +1985,7 @@ function renderChordList() {
 
       card.querySelector('.del-btn').addEventListener('click', e => {
         e.stopPropagation();
-        removeChordBox(i);
+        deleteOrClear(i);
         renderChordList();
         updateCamDisplay();
       });
@@ -1941,6 +1993,7 @@ function renderChordList() {
       card.addEventListener('click', e => {
         if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.lyric-input')) return;
         if (dragJustFinished) { dragJustFinished = false; return; }
+        saveHistory();
         chords[i] = bIsRest ? null : {
           root: bRoot, acc: bAcc, oct: bOct, quality: bQuality, inv: bInv,
           label: buildLabel(bRoot, bAcc, bQuality),
@@ -1984,6 +2037,7 @@ function chordsToText() {
 }
 
 function mergeLyrics() {
+  saveHistory();
   const input = document.getElementById('codeTextInput');
   const tokens = (input.value.match(/[^\s,"]*"[^"]*"|[^\s,]+/g) || []).filter(Boolean);
   let changed = 0;
@@ -2086,6 +2140,7 @@ document.getElementById('emptyBtn').addEventListener('click', () => {
 });
 
 document.getElementById('addBtn').addEventListener('click', () => {
+  saveHistory();
   if (bIsRest) {
     chords.push(null);
     selectChordIdx(chords.length - 1);
@@ -2103,8 +2158,12 @@ document.getElementById('addBtn').addEventListener('click', () => {
   updateCamDisplay();
 });
 
+document.getElementById('undoBtn').addEventListener('click', undo);
+document.getElementById('redoBtn').addEventListener('click', redo);
+
 document.getElementById('clearAllBtn').addEventListener('click', () => {
   if (!chords.length) return;
+  saveHistory();
   chords = []; currentIdx = -1; clearSelection(); isSpaceHeld = false;
   stopSound();
   renderChordList();
@@ -2281,7 +2340,11 @@ function onRelease() {
 window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   const key = e.key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && key === 'c') {
+  if ((e.ctrlKey || e.metaKey) && key === 'z' && !e.shiftKey) {
+    e.preventDefault(); undo();
+  } else if ((e.ctrlKey || e.metaKey) && (key === 'y' || (key === 'z' && e.shiftKey))) {
+    e.preventDefault(); redo();
+  } else if ((e.ctrlKey || e.metaKey) && key === 'c') {
     if (copySelectedChord()) e.preventDefault();
   } else if ((e.ctrlKey || e.metaKey) && key === 'v') {
     if (pasteChordBox()) e.preventDefault();
@@ -2331,6 +2394,7 @@ window.addEventListener('pointerup', () => {
   if (!dragWatch) return;
   const didDrag = dragWatch.started;
   if (dragState && dragState.to >= 0 && dragState.to !== dragState.start) {
+    saveHistory();
     const src = chords[dragState.start];
     chords[dragState.to] = src ? { ...src } : null;
     renderChordList();
@@ -2366,7 +2430,7 @@ function putSaves(arr) { localStorage.setItem(SAVES_KEY, JSON.stringify(arr)); }
 function saveToSlot(name) {
   const saves = getSaves();
   const idx = saves.findIndex(s => s.name === name);
-  const entry = { name, date: new Date().toLocaleString('ko-KR'), chords: JSON.parse(JSON.stringify(chords)) };
+  const entry = { name, date: new Date().toLocaleString('ko-KR'), chords: JSON.parse(JSON.stringify(chords)), bpm: autoBpm, sound: currentSound };
   if (idx >= 0) saves[idx] = entry; else saves.push(entry);
   putSaves(saves);
 }
@@ -2375,7 +2439,10 @@ function loadFromSlot(name) {
   const entry = getSaves().find(s => s.name === name);
   if (!entry) return;
   chords = JSON.parse(JSON.stringify(entry.chords));
+  if (entry.bpm) { autoBpm = entry.bpm; document.getElementById('bpmInput').value = autoBpm; }
+  if (entry.sound) { currentSound = entry.sound; document.getElementById('soundSel').value = currentSound; }
   currentIdx = -1; clearSelection(); isSpaceHeld = false;
+  undoStack = []; redoStack = [];
   stopSound();
   renderChordList();
   updateCamDisplay();
@@ -2403,7 +2470,7 @@ function renderSaveModal() {
     row.innerHTML = `
       <div class="slot-info">
         <span class="slot-name">${s.name}</span>
-        <span class="slot-date">${s.date} · ${s.chords.length}개 코드</span>
+        <span class="slot-date">${s.date} · ${s.chords.length}개 코드 · ${s.bpm || 80}BPM · ${s.sound || 'basic'}</span>
       </div>
       <button class="slot-overwrite" title="현재 상태로 덮어쓰기">💾</button>
       <button class="slot-load">열기</button>
