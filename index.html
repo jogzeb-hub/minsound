@@ -603,6 +603,51 @@
       padding: 10px 24px; cursor: pointer; font-size: 0.88rem;
     }
     .cam-exit-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── AI 프롬프트 모달 ── */
+    .prompt-modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      width: min(92vw, 480px);
+      max-height: 82dvh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .prompt-modal-head {
+      font-size: 0.95rem; font-weight: 700;
+    }
+    .prompt-modal-desc {
+      font-size: 0.73rem; color: var(--muted); line-height: 1.5;
+    }
+    .prompt-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.76rem;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      font-family: inherit;
+      user-select: all;
+    }
+    .prompt-modal-btns { display: flex; gap: 8px; }
+    .copy-btn {
+      flex: 1;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 10px; cursor: pointer;
+      font-size: 0.84rem; font-weight: 700;
+    }
+    .copy-btn:active { opacity: 0.85; }
+    .copy-btn.copied { background: #2e9e5b; }
   </style>
 </head>
 <body>
@@ -610,6 +655,7 @@
   <header>
     <span class="logo">minsound</span>
     <div class="header-btns">
+      <button class="icon-btn" id="aiPromptBtn">🤖 AI변환</button>
       <button class="icon-btn" id="projectBtn">📁 프로젝트</button>
       <button class="icon-btn" id="camBtn">📷 카메라</button>
     </div>
@@ -733,6 +779,36 @@
     <div class="space-hint">SPACE · ↓ 현재 지속 재생 &nbsp;/&nbsp; Shift+클릭 범위 선택</div>
     <button class="space-btn" id="spaceBtn">SPACE</button>
   </footer>
+
+  <!-- AI 프롬프트 모달 -->
+  <div class="modal-overlay hidden" id="aiPromptModal">
+    <div class="prompt-modal-box">
+      <div class="prompt-modal-head">🤖 악보 → 코드 AI 변환 프롬프트</div>
+      <div class="prompt-modal-desc">아래 프롬프트를 복사해서 Claude·ChatGPT 등 AI에 악보 이미지와 함께 붙여넣으세요. 출력된 텍스트를 minsound 입력창에 바로 사용할 수 있습니다.</div>
+      <div class="prompt-box" id="aiPromptText">악보 이미지에서 코드 기호만 추출해서 minsound 텍스트 입력 형식으로 변환해줘.
+
+## 출력 규칙
+- 코드를 악보 순서대로 스페이스로 구분해서 나열
+- 한 마디 = 한 단위. 마디 안에 코드가 없으면 - 로 표시
+- 마디 구분선(|)은 표시하지 않음
+- 줄바꿈 없이 한 줄로 출력
+- 코드 표기는 영문 그대로 (C, Am, F#m7, Bbmaj7 등)
+- 플랫은 b, 샵은 # 사용 (♭→b, ♯→#)
+
+## 지원 코드 형식 예시
+C  Cm  C7  Cmaj7  Cm7  Cm7b5  Cdim  Cdim7  Caug
+Csus2  Csus4  C6  Cm6  C9  Cmaj9  Cm9  Cadd9
+
+## 출력 예시
+C Am F G7 - Am F C G
+
+악보 이미지를 분석해서 위 형식으로만 출력해. 설명 없이 코드 텍스트만.</div>
+      <div class="prompt-modal-btns">
+        <button class="copy-btn" id="copyPromptBtn">📋 프롬프트 복사</button>
+        <button class="modal-close" style="flex:0 0 auto;margin:0;padding:10px 16px;" id="aiPromptCloseBtn">✕</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 프로젝트 모달 -->
   <div class="modal-overlay hidden" id="projectModal">
@@ -1907,6 +1983,30 @@ document.getElementById('bpmUp').addEventListener('click', () => {
   document.getElementById('bpmDisplay').textContent = autoBpm;
 });
 document.getElementById('autoPlayBtn').addEventListener('click', startAutoPlay);
+
+// ── AI 프롬프트 모달 ──
+document.getElementById('aiPromptBtn').addEventListener('click', () => {
+  document.getElementById('aiPromptModal').classList.remove('hidden');
+});
+document.getElementById('aiPromptCloseBtn').addEventListener('click', () => {
+  document.getElementById('aiPromptModal').classList.add('hidden');
+});
+document.getElementById('aiPromptModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('aiPromptModal'))
+    document.getElementById('aiPromptModal').classList.add('hidden');
+});
+document.getElementById('copyPromptBtn').addEventListener('click', () => {
+  const text = document.getElementById('aiPromptText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyPromptBtn');
+    btn.textContent = '✅ 복사 완료!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 프롬프트 복사';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+});
 
 // ── 초기화 ──
 updatePreview();
