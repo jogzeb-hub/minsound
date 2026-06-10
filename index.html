@@ -1334,7 +1334,7 @@ function ensureEPSynth(which) {
   rv.connect(Tone.Destination);
   const lim = new Tone.Limiter(-2);
   lim.connect(rv);
-  const g = new Tone.Gain(1.4);
+  const g = new Tone.Gain(2.4);
   g.connect(lim);
   const sampler = new Tone.Sampler({
     urls: EP_URLS,
@@ -1356,7 +1356,7 @@ function playEP(which, root, acc, oct, quality, inv, hits = 1) {
   const barDur = (60 / autoBpm) * 4;
   const half = barDur / 2;
   const noteDur = barDur * 0.88;
-  const baseVel = 0.85;
+  const baseVel = 0.95;
   const SPREAD = 0.018;
   const now = Tone.now() + 0.01;
   for (let hit = 0; hit < hits; hit++) {
