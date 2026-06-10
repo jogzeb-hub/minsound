@@ -408,18 +408,30 @@
     .cam-lyrics-area {
       position: absolute; bottom: 96px; left: 0; right: 0;
       text-align: center; z-index: 3; padding: 0 24px;
-      pointer-events: none;
+      pointer-events: none; overflow: hidden;
     }
     .cam-lyrics-prev, .cam-lyrics-next {
       color: rgba(255,255,255,0.42); font-size: 0.92rem; font-weight: 500;
       text-shadow: 0 2px 8px rgba(0,0,0,0.7);
       min-height: 1.3em; line-height: 1.4;
+      transition: opacity 0.2s;
     }
     .cam-lyrics-text {
       color: #fff; font-size: 1.4rem; font-weight: 700;
       text-shadow: 0 2px 10px rgba(0,0,0,0.8);
       min-height: 1.8em; line-height: 1.4;
+      will-change: transform, opacity;
     }
+    @keyframes lyricsSlideIn {
+      from { transform: translateX(72px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+    @keyframes lyricsSlideOut {
+      from { transform: translateX(0);     opacity: 1; }
+      to   { transform: translateX(-72px); opacity: 0; }
+    }
+    .cam-lyrics-text.lyric-slide-in  { animation: lyricsSlideIn  0.28s cubic-bezier(0.4,0,0.2,1) forwards; }
+    .cam-lyrics-text.lyric-slide-out { animation: lyricsSlideOut 0.16s ease forwards; }
     .cam-lyrics-toggle {
       position: absolute; bottom: 76px; right: 16px; z-index: 4;
       background: rgba(255,255,255,0.12);
@@ -944,7 +956,6 @@
         <button class="bpm-step" id="bpmUp">＋</button>
       </div>
       <button class="auto-btn" id="autoPlayBtn">▶ 자동재생</button>
-      <button class="auto-btn" id="restrikeBtn" style="flex:0;padding:7px 9px;font-size:0.72rem" title="빈칸(-) 슬롯에서 이전 코드를 재타격">빈칸 재타격</button>
       <button class="bpm-step" id="resetBtn" title="처음으로">⏮</button>
     </div>
     <div class="nav-btns">
@@ -1267,6 +1278,25 @@ const QUALITY_COLORS = {
 };
 const LABEL_MAP = { maj:'', '69':'6/9' };
 const SAVES_KEY = 'minsound_saves';
+const SAMPLE_PROJECT = (function() {
+  const M='maj',m='m',S7='7';
+  const mc=(r,a,q,l)=>({root:r,acc:a,oct:4,quality:q,inv:0,
+    label:r+(a==='#'?'♯':a==='b'?'♭':'')+({maj:'',m:'m','7':'7',maj7:'maj7'}[q]||q),
+    color:{maj:'#4a90d9',m:'#5a9e6f','7':'#e8a44a',maj7:'#5a9e9e'}[q]||'#4a90d9',
+    lyrics:l});
+  const ch=[
+    mc('E','',M,'사랑하기'),null,
+    mc('C','#',m,'때문에'),null,
+    mc('A','',M,'난 그대를'),null,
+    mc('B','',M,'보내드려'),null,
+    mc('E','',M,'슬프지만'),null,
+    mc('A','',M,'어쩔수가'),null,
+    mc('B','',S7,'없어요'),null,
+    mc('E','',M,''),null,
+  ];
+  const opts={bpm:72,sound:'balladpiano',cpr:4,lyricsVisible:true,camLyricsOn:true};
+  return {name:'사랑하기 때문에 (이문세)',date:'샘플 (기본 제공)',chords:ch,...opts,options:opts};
+})();
 const PC_TO_SHARP = [
   ['C','n'], ['C','#'], ['D','n'], ['D','#'], ['E','n'], ['F','n'],
   ['F','#'], ['G','n'], ['G','#'], ['A','n'], ['A','#'], ['B','n']
@@ -1314,11 +1344,60 @@ let camLyricsOn = false;
 // ── 사운드 / 자동재생 ──
 let currentSound = 'basic';
 let autoBpm = 80;
+const BPM_MIN = 40;
+const BPM_MAX = 240;
+const BPM_DEFAULT = 80;
 let autoPlayActive = false;
 let autoPlayTimer = null;
-let autoRestrike = false;
-let lastAutoChord = null;
+let autoPlayTimers = [];
 let balladPoly = null;
+
+function parseBpmValue(value) {
+  if (value == null) return NaN;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return NaN;
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) return numeric;
+    const match = trimmed.match(/-?\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : NaN;
+  }
+  return Number(value);
+}
+
+function normalizeBpm(value, fallback = BPM_DEFAULT) {
+  let bpm = parseBpmValue(value);
+  if (!Number.isFinite(bpm)) bpm = parseBpmValue(fallback);
+  if (!Number.isFinite(bpm)) bpm = BPM_DEFAULT;
+  return Math.max(BPM_MIN, Math.min(BPM_MAX, Math.round(bpm)));
+}
+
+function setAutoBpm(value, fallback = autoBpm) {
+  autoBpm = normalizeBpm(value, fallback);
+  const input = document.getElementById('bpmInput');
+  if (input) input.value = autoBpm;
+  return autoBpm;
+}
+
+function getAutoBpm() {
+  return setAutoBpm(autoBpm, BPM_DEFAULT);
+}
+
+function queueAutoTimer(fn, delay) {
+  const timerId = setTimeout(() => {
+    autoPlayTimers = autoPlayTimers.filter(id => id !== timerId);
+    if (autoPlayTimer === timerId) autoPlayTimer = null;
+    fn();
+  }, delay);
+  autoPlayTimers.push(timerId);
+  return timerId;
+}
+
+function clearAutoTimers() {
+  autoPlayTimers.forEach(clearTimeout);
+  autoPlayTimers = [];
+  autoPlayTimer = null;
+}
 
 // ── 오디오 ──
 let audioReady = false;
@@ -1405,7 +1484,7 @@ let lastEP1Notes = [], lastEP2Notes = [], lastBalladNotes = [];
 function ensureEPSynth(which) {
   if (which === 'ep1' && ep1Poly) return;
   if (which === 'ep2' && ep2Poly) return;
-  const rv = new Tone.Reverb({ decay: 1.2, wet: 0.14 });
+  const rv = new Tone.Reverb({ decay: 1.4, wet: 0.14 });
   rv.connect(Tone.Destination);
   const lim = new Tone.Limiter(-2);
   lim.connect(rv);
@@ -1414,7 +1493,7 @@ function ensureEPSynth(which) {
   const sampler = new Tone.Sampler({
     urls: EP_URLS,
     baseUrl: which === 'ep1' ? EP1_BASE : EP2_BASE,
-    release: 1.5,
+    release: 2.5,
   });
   sampler.connect(g);
   if (which === 'ep1') ep1Poly = sampler;
@@ -1432,7 +1511,7 @@ function playEP(which, root, acc, oct, quality, inv, hits = 1) {
   const upper = noteNames.length > 1 ? noteNames.slice(1) : [noteNames[0]];
   const allNotes = [bassName, ...upper];
   if (which === 'ep1') lastEP1Notes = allNotes; else lastEP2Notes = allNotes;
-  const barDur = (60 / autoBpm) * 4;
+  const barDur = (60 / getAutoBpm()) * 4;
   const half = barDur / 2;
   const noteDur = barDur * 0.88;
   const baseVel = 0.95;
@@ -1459,7 +1538,7 @@ function ensureBalladSynth() {
   balladPoly = new Tone.Sampler({
     urls: PIANO_URLS,
     baseUrl: PIANO_BASE,
-    release: 1.5,
+    release: 5.0,
     onload: () => { balladSamplerLoaded = true; },
   });
   balladPoly.connect(g);
@@ -1502,7 +1581,7 @@ function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
   const bassName = noteNames[0].replace(/(\d+)$/, m => String(Math.max(1, parseInt(m) - 1)));
   const upper = noteNames.length > 1 ? noteNames.slice(1) : [noteNames[0]];
   lastBalladNotes = [bassName, ...upper];
-  const barDur = (60 / autoBpm) * 4;
+  const barDur = (60 / getAutoBpm()) * 4;
   const half = barDur / 2;
   const baseVel = 0.70;
   const SPREAD = 0.020;
@@ -1510,7 +1589,7 @@ function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
   for (let hit = 0; hit < hits; hit++) {
     const ht = now + hit * half;
     const vs = hit === 0 ? 1.0 : 0.84;
-    const noteDur = barDur * 0.88;
+    const noteDur = barDur * 1.2;
     const bv = Math.min(1.1, baseVel * vs * bassLoudComp(bassName));
     balladPoly.triggerAttackRelease(bassName, noteDur, ht, bv);
     upper.forEach((note, ni) => {
@@ -1745,8 +1824,46 @@ function currentRealIdx() {
   return nextRealIdx(from);
 }
 
+function activePlaybackRealIdx() {
+  return currentRealIdx();
+}
+
+function showAutoChord(c) {
+  isSpaceHeld = true;
+  renderChordList();
+  updateCamDisplay();
+  scrollToActive();
+  const spBtn = document.getElementById('spaceBtn');
+  spBtn.classList.add('pressed');
+  spBtn.textContent = c.label;
+}
+
 function cloneChord(c) {
   return c === null ? null : JSON.parse(JSON.stringify(c));
+}
+
+let _lyricsAnimTimer = null;
+function animateLyricsText(el, newText) {
+  if (!el) return;
+  if (el.textContent === newText) return;
+  if (_lyricsAnimTimer) {
+    clearTimeout(_lyricsAnimTimer);
+    _lyricsAnimTimer = null;
+    el.classList.remove('lyric-slide-in', 'lyric-slide-out');
+    el.textContent = newText;
+    void el.offsetWidth;
+    el.classList.add('lyric-slide-in');
+    return;
+  }
+  el.classList.remove('lyric-slide-in');
+  el.classList.add('lyric-slide-out');
+  _lyricsAnimTimer = setTimeout(() => {
+    _lyricsAnimTimer = null;
+    el.textContent = newText;
+    el.classList.remove('lyric-slide-out');
+    void el.offsetWidth;
+    el.classList.add('lyric-slide-in');
+  }, 140);
 }
 
 function normalizeRange(start, end) {
@@ -1954,6 +2071,7 @@ function renderChordList() {
   }
 
   const readyIdx = currentRealIdx();
+  const activeIdx = activePlaybackRealIdx();
   container.innerHTML = '';
 
   const rows = [];
@@ -1986,7 +2104,7 @@ function renderChordList() {
 
     for (let i = rowStart; i < rowEnd; i++) {
       const c = chords[i];
-      const isActive = i === currentIdx && isSpaceHeld;
+      const isActive = (i === currentIdx || i === activeIdx) && isSpaceHeld;
       const isNext   = i === readyIdx && !isSpaceHeld;
       const isSelected = isIdxSelected(i);
       const breakClass = chordsPerRow === 0 && i > 0 && c && c.lineBreakBefore ? ' line-break-before' : '';
@@ -2143,8 +2261,7 @@ function mergeLyrics() {
     }
   }
   if (!lyricsVisible) {
-    lyricsVisible = true;
-    document.getElementById('lyricsToggleBtn').classList.add('active');
+    setLyricsVisible(true, false);
   }
   renderChordList();
   updateCamDisplay();
@@ -2301,73 +2418,43 @@ function scrollToActive() {
 function autoPlayStep() {
   if (!autoPlayActive || chords.length === 0) return;
 
-  if (autoRestrike) {
-    // 빈칸 재타격 모드: 슬롯 하나씩 이동, null이면 이전 코드 재타격
-    if (currentIdx < 0) currentIdx = 0;
-    const slot = chords[currentIdx];
-    const c = slot || lastAutoChord;
-    if (!c) { currentIdx = (currentIdx + 1) % chords.length; autoPlayStep(); return; }
-    if (slot) lastAutoChord = slot;
-    playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, 1);
-    isSpaceHeld = true;
-    renderChordList(); updateCamDisplay(); scrollToActive();
-    const spBtn = document.getElementById('spaceBtn');
-    spBtn.classList.add('pressed');
-    spBtn.textContent = c.label;
-    const beatMs = (60 / autoBpm) * 1000;
-    autoPlayTimer = setTimeout(() => {
-      if (!autoPlayActive) return;
-      if (currentSound === 'basic') stopSound();
-      isSpaceHeld = false;
-      currentIdx = (currentIdx + 1) % chords.length;
-      renderChordList(); updateCamDisplay();
-      autoPlayTimer = setTimeout(() => { if (autoPlayActive) autoPlayStep(); }, 80);
-    }, Math.max(150, beatMs - 80));
-    return;
-  }
-
-  // 기본 모드: null 슬롯 = 이전 코드 길이 연장
+  // null 슬롯은 이전 코드 길이 연장으로 처리한다.
   const idx = currentRealIdx();
   if (idx === -1) { stopAutoPlay(); return; }
   currentIdx = idx;
   const c = chords[currentIdx];
-  const beats = chordBeatCount(idx);
-  const effectiveBeats = Math.max(4, beats);
-  const hits = Math.floor(effectiveBeats / 2);
-  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, hits);
-  isSpaceHeld = true;
-  renderChordList(); updateCamDisplay(); scrollToActive();
-  const spBtn = document.getElementById('spaceBtn');
-  spBtn.classList.add('pressed');
-  spBtn.textContent = c.label;
-  const totalMs = (60 / autoBpm) * effectiveBeats * 1000;
-  autoPlayTimer = setTimeout(() => {
+  const slotCount = chordBeatCount(idx);
+  const effectiveBeats = slotCount * 4;
+  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, 2);
+  showAutoChord(c);
+  const beatMs = (60 / getAutoBpm()) * 1000;
+  const totalMs = beatMs * effectiveBeats;
+  autoPlayTimer = queueAutoTimer(() => {
     if (!autoPlayActive) return;
     if (currentSound === 'basic') stopSound();
     isSpaceHeld = false;
-    currentIdx = (idx + beats) % chords.length;
+    currentIdx = (idx + slotCount) % chords.length;
     renderChordList(); updateCamDisplay();
-    autoPlayTimer = setTimeout(() => { if (autoPlayActive) autoPlayStep(); }, 80);
+    autoPlayTimer = queueAutoTimer(() => { if (autoPlayActive) autoPlayStep(); }, 80);
   }, Math.max(200, totalMs - 80));
 }
 
 function startAutoPlay() {
   if (autoPlayActive) { stopAutoPlay(); return; }
   if (!chords.length) return;
+  clearAutoTimers();
   ensureAudio().then(() => {
     autoPlayActive = true;
-    lastAutoChord = null;
     document.getElementById('autoPlayBtn').classList.add('active');
     document.getElementById('autoPlayBtn').textContent = '⏹ 자동재생 중';
-    if (currentIdx < 0 || currentIdx >= chords.length) currentIdx = autoRestrike ? 0 : -1;
+    if (currentIdx < 0 || currentIdx >= chords.length) currentIdx = -1;
     autoPlayStep();
   });
 }
 
 function stopAutoPlay() {
   autoPlayActive = false;
-  clearTimeout(autoPlayTimer);
-  autoPlayTimer = null;
+  clearAutoTimers();
   if (currentSound === 'basic') stopSound();
   isSpaceHeld = false;
   renderChordList();
@@ -2542,10 +2629,48 @@ document.getElementById('nextBtn').addEventListener('click', goForward);
 function getSaves() { try { return JSON.parse(localStorage.getItem(SAVES_KEY) || '[]'); } catch { return []; } }
 function putSaves(arr) { localStorage.setItem(SAVES_KEY, JSON.stringify(arr)); }
 
+function getProjectOptions() {
+  return {
+    bpm: getAutoBpm(),
+    sound: currentSound,
+    cpr: chordsPerRow,
+    lyricsVisible,
+    camLyricsOn,
+  };
+}
+
+function getSavedProjectOption(entry, key, fallback) {
+  if (entry?.options && Object.prototype.hasOwnProperty.call(entry.options, key)) {
+    return entry.options[key];
+  }
+  if (entry && Object.prototype.hasOwnProperty.call(entry, key)) return entry[key];
+  return fallback;
+}
+
+function setLyricsVisible(enabled, shouldRender = true) {
+  lyricsVisible = !!enabled;
+  const btn = document.getElementById('lyricsToggleBtn');
+  if (btn) btn.classList.toggle('active', lyricsVisible);
+  if (shouldRender) renderChordList();
+}
+
+function setCamLyricsOn(enabled) {
+  camLyricsOn = !!enabled;
+  const btn = document.getElementById('camLyricsToggle');
+  const area = document.getElementById('camLyricsArea');
+  if (btn) {
+    btn.textContent = camLyricsOn ? '가사 ON' : '가사 OFF';
+    btn.classList.toggle('active', camLyricsOn);
+  }
+  if (area) area.style.display = camLyricsOn ? '' : 'none';
+  updateCamDisplay();
+}
+
 function saveToSlot(name) {
   const saves = getSaves();
   const idx = saves.findIndex(s => s.name === name);
-  const entry = { name, date: new Date().toLocaleString('ko-KR'), chords: JSON.parse(JSON.stringify(chords)), bpm: autoBpm, sound: currentSound, cpr: chordsPerRow };
+  const options = getProjectOptions();
+  const entry = { name, date: new Date().toLocaleString('ko-KR'), chords: JSON.parse(JSON.stringify(chords)), ...options, options };
   if (idx >= 0) saves[idx] = entry; else saves.push(entry);
   putSaves(saves);
 }
@@ -2554,9 +2679,18 @@ function loadFromSlot(name) {
   const entry = getSaves().find(s => s.name === name);
   if (!entry) return;
   chords = JSON.parse(JSON.stringify(entry.chords));
-  if (entry.bpm) { autoBpm = entry.bpm; document.getElementById('bpmInput').value = autoBpm; }
-  if (entry.sound) { currentSound = entry.sound; document.getElementById('soundSel').value = currentSound; }
-  if (entry.cpr != null) { chordsPerRow = entry.cpr; document.getElementById('cprSel').value = chordsPerRow; updateCardSize(); }
+  setAutoBpm(getSavedProjectOption(entry, 'bpm', autoBpm), autoBpm);
+  const savedSound = getSavedProjectOption(entry, 'sound', currentSound);
+  if (savedSound) { currentSound = savedSound; document.getElementById('soundSel').value = currentSound; }
+  const savedCpr = getSavedProjectOption(entry, 'cpr', chordsPerRow);
+  if (savedCpr != null) {
+    const cpr = parseInt(savedCpr, 10);
+    chordsPerRow = Number.isFinite(cpr) ? cpr : 4;
+    document.getElementById('cprSel').value = chordsPerRow;
+    updateCardSize();
+  }
+  setLyricsVisible(getSavedProjectOption(entry, 'lyricsVisible', lyricsVisible), false);
+  setCamLyricsOn(getSavedProjectOption(entry, 'camLyricsOn', camLyricsOn));
   currentIdx = -1; clearSelection(); isSpaceHeld = false;
   undoStack = []; redoStack = [];
   stopSound();
@@ -2581,12 +2715,20 @@ function renderSaveModal() {
     return;
   }
   saves.forEach(s => {
+    const savedFlags = [
+      getSavedProjectOption(s, 'lyricsVisible', false) ? '가사표시' : '',
+      getSavedProjectOption(s, 'camLyricsOn', false) ? '카메라가사' : '',
+    ].filter(Boolean).join(' · ');
+    const flagText = savedFlags ? ` · ${savedFlags}` : '';
+    const savedBpm = normalizeBpm(getSavedProjectOption(s, 'bpm', BPM_DEFAULT), BPM_DEFAULT);
+    const savedSound = getSavedProjectOption(s, 'sound', 'basic');
+    const savedCpr = getSavedProjectOption(s, 'cpr', 4);
     const row = document.createElement('div');
     row.className = 'modal-slot';
     row.innerHTML = `
       <div class="slot-info">
         <span class="slot-name">${s.name}</span>
-        <span class="slot-date">${s.date} · ${s.chords.length}개 · ${s.bpm || 80}BPM · ${s.sound || 'basic'} · 줄당${s.cpr ?? 4}</span>
+        <span class="slot-date">${s.date} · ${s.chords.length}개 · ${savedBpm}BPM · ${savedSound || 'basic'} · 줄당${savedCpr ?? 4}${flagText}</span>
       </div>
       <button class="slot-overwrite" title="현재 상태로 덮어쓰기">💾</button>
       <button class="slot-load">열기</button>
@@ -2633,7 +2775,7 @@ function updateCamDisplay() {
   const nextEl = document.getElementById('camNextChord');
   if (!nameEl) return;
 
-  const cur = currentRealIdx();
+  const cur = (isSpaceHeld || autoPlayActive) ? activePlaybackRealIdx() : currentRealIdx();
 
   // 이전 / 다음 코드 표시
   if (prevEl) {
@@ -2652,7 +2794,7 @@ function updateCamDisplay() {
   const pi2 = cur >= 0 ? prevRealIdx(cur) : -1;
   const ni2 = cur >= 0 ? nextRealIdx(cur) : -1;
   if (lyricsPrevEl) lyricsPrevEl.textContent = (pi2 >= 0 && pi2 !== cur && chords[pi2]) ? (chords[pi2].lyrics || '') : '';
-  if (lyricsTextEl)  lyricsTextEl.textContent  = (cur >= 0 && chords[cur]) ? (chords[cur].lyrics || '') : '';
+  animateLyricsText(lyricsTextEl, (cur >= 0 && chords[cur]) ? (chords[cur].lyrics || '') : '');
   if (lyricsNextEl) lyricsNextEl.textContent  = (ni2 >= 0 && ni2 !== cur && chords[ni2]) ? (chords[ni2].lyrics || '') : '';
 
   if ((isSpaceHeld || autoPlayActive) && cur !== -1) {
@@ -2701,42 +2843,26 @@ document.getElementById('soundSel').addEventListener('change', e => {
   currentSound = e.target.value;
 });
 document.getElementById('bpmDown').addEventListener('click', () => {
-  autoBpm = Math.max(40, autoBpm - 5);
-  document.getElementById('bpmInput').value = autoBpm;
+  setAutoBpm(autoBpm - 5);
 });
 document.getElementById('bpmUp').addEventListener('click', () => {
-  autoBpm = Math.min(240, autoBpm + 5);
-  document.getElementById('bpmInput').value = autoBpm;
+  setAutoBpm(autoBpm + 5);
 });
 document.getElementById('bpmInput').addEventListener('change', e => {
-  autoBpm = Math.max(40, Math.min(240, parseInt(e.target.value) || 80));
-  e.target.value = autoBpm;
+  setAutoBpm(e.target.value, BPM_DEFAULT);
 });
 document.getElementById('bpmInput').addEventListener('input', e => {
-  const v = parseInt(e.target.value);
-  if (!isNaN(v) && v >= 40 && v <= 240) autoBpm = v;
+  const v = parseBpmValue(e.target.value);
+  if (Number.isFinite(v)) autoBpm = normalizeBpm(v, autoBpm);
 });
 document.getElementById('autoPlayBtn').addEventListener('click', startAutoPlay);
-document.getElementById('restrikeBtn').addEventListener('click', () => {
-  autoRestrike = !autoRestrike;
-  const btn = document.getElementById('restrikeBtn');
-  btn.classList.toggle('active', autoRestrike);
-  btn.textContent = autoRestrike ? '빈칸 재타격: ON' : '빈칸 재타격';
-});
 
 // ── 가사 토글 ──
 document.getElementById('lyricsToggleBtn').addEventListener('click', () => {
-  lyricsVisible = !lyricsVisible;
-  document.getElementById('lyricsToggleBtn').classList.toggle('active', lyricsVisible);
-  renderChordList();
+  setLyricsVisible(!lyricsVisible);
 });
 document.getElementById('camLyricsToggle').addEventListener('click', () => {
-  camLyricsOn = !camLyricsOn;
-  const btn = document.getElementById('camLyricsToggle');
-  const area = document.getElementById('camLyricsArea');
-  btn.textContent = camLyricsOn ? '가사 ON' : '가사 OFF';
-  btn.classList.toggle('active', camLyricsOn);
-  area.style.display = camLyricsOn ? '' : 'none';
+  setCamLyricsOn(!camLyricsOn);
 });
 
 // ── 사용법 모달 ──
@@ -2781,6 +2907,12 @@ document.getElementById('copyLyricsBtn').addEventListener('click', () =>
   copyPrompt('copyLyricsBtn', 'aiPromptLyrics', '📋 가사+코드<br><span class="copy-sub">(코드"가사")</span>'));
 
 // ── 초기화 ──
+if (!getSaves().length) {
+  putSaves([SAMPLE_PROJECT]);
+  loadFromSlot(SAMPLE_PROJECT.name);
+}
+setLyricsVisible(lyricsVisible, false);
+setCamLyricsOn(camLyricsOn);
 updatePreview();
 updateCardSize();
 renderChordList();
