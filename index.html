@@ -177,6 +177,19 @@
       font-size: 0.8rem;
       font-weight: 700;
     }
+    .code-text-btn-sec {
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.07);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 10px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .code-text-btn-sec:hover { background: rgba(255,255,255,0.12); }
     .code-text-help {
       margin-top: 4px;
       min-height: 1.2em;
@@ -739,6 +752,7 @@
     </div>
     <div class="text-code-row">
       <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder="C Am F#m Bb  /  옥타브: C^2 Am^4  /  빈칸: -"></textarea>
+      <button class="code-text-btn-sec" id="codeTextHoldBtn">Hold 변환</button>
       <button class="code-text-btn" id="codeTextAddBtn">입력</button>
     </div>
     <div class="code-text-help" id="codeTextHelp">예: C Am F#m Bb  /  샵: F#m C#  /  플랫: Bb Eb  /  옥타브: C^2 G^4  /  빈칸: -</div>
@@ -1195,18 +1209,10 @@ function parseTextChords(text) {
   const tokens = text.split(/[\s,]+/).map(t => t.trim()).filter(Boolean);
   const parsed = [];
   const invalid = [];
-  let lastChord = null;
   tokens.forEach(token => {
     const chord = parseTextChordToken(token);
-    if (chord === undefined) {
-      invalid.push(token);
-    } else if (chord === null && lastChord !== null) {
-      // hold: - 다음에 이전 코드 반복
-      parsed.push({ ...lastChord });
-    } else {
-      parsed.push(chord);
-      if (chord !== null) lastChord = chord;
-    }
+    if (chord === undefined) invalid.push(token);
+    else parsed.push(chord);
   });
   return { parsed, invalid };
 }
@@ -1656,6 +1662,18 @@ document.getElementById('transposeDownBtn').addEventListener('click', () => tran
 document.getElementById('transposeUpBtn').addEventListener('click', () => transposeAllChords(1));
 
 document.getElementById('codeTextAddBtn').addEventListener('click', addTextChords);
+document.getElementById('codeTextHoldBtn').addEventListener('click', () => {
+  const input = document.getElementById('codeTextInput');
+  const tokens = input.value.trim().split(/[\s,]+/);
+  let prev = '';
+  const expanded = tokens.map(t => {
+    if (t === '-' || t === '—') return prev || t;
+    if (t) prev = t;
+    return t;
+  });
+  input.value = expanded.join(' ');
+  addTextChords();
+});
 document.getElementById('codeTextInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
