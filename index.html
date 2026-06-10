@@ -1855,11 +1855,17 @@ function renderChordList() {
       });
       card.addEventListener('pointerdown', e => startDragWatch(e, i, card));
       card.addEventListener('click', e => {
-        if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap')) return;
+        if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.lyric-input')) return;
         if (dragJustFinished) { dragJustFinished = false; return; }
-        selectChordIdx(i, e.shiftKey);
-        if (c !== null && !e.shiftKey) jumpTo(i);
-        else renderChordList();
+        chords[i] = {
+          root: bRoot, acc: bAcc, oct: bOct, quality: bQuality, inv: bInv,
+          label: buildLabel(bRoot, bAcc, bQuality),
+          color: QUALITY_COLORS[bQuality] || '#00a85a',
+          lyrics: (chords[i] ? chords[i].lyrics : '') || '',
+        };
+        selectChordIdx(i);
+        renderChordList();
+        updateCamDisplay();
       });
       cardsEl.appendChild(card);
     }
@@ -2146,7 +2152,9 @@ window.addEventListener('pointermove', e => {
 window.addEventListener('pointerup', () => {
   if (!dragWatch) return;
   const didDrag = dragWatch.started;
-  if (dragState && dragState.to >= 0 && moveChordRange(dragState.start, dragState.end, dragState.to)) {
+  if (dragState && dragState.to >= 0 && dragState.to !== dragState.start) {
+    const src = chords[dragState.start];
+    chords[dragState.to] = src ? { ...src } : null;
     renderChordList();
     updateCamDisplay();
   }
