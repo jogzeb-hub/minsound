@@ -396,6 +396,11 @@
       text-align: center; z-index: 3; padding: 0 24px;
       pointer-events: none;
     }
+    .cam-lyrics-prev, .cam-lyrics-next {
+      color: rgba(255,255,255,0.42); font-size: 0.92rem; font-weight: 500;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+      min-height: 1.3em; line-height: 1.4;
+    }
     .cam-lyrics-text {
       color: #fff; font-size: 1.4rem; font-weight: 700;
       text-shadow: 0 2px 10px rgba(0,0,0,0.8);
@@ -1206,7 +1211,9 @@ C Am F G
       <div class="cam-chord-num" id="camChordNum"></div>
     </div>
     <div class="cam-lyrics-area" id="camLyricsArea" style="display:none">
+      <div class="cam-lyrics-prev" id="camLyricsPrev"></div>
       <div class="cam-lyrics-text" id="camLyricsText"></div>
+      <div class="cam-lyrics-next" id="camLyricsNext"></div>
     </div>
     <button class="cam-lyrics-toggle" id="camLyricsToggle">가사 OFF</button>
     <div class="cam-controls">
@@ -2571,12 +2578,15 @@ function updateCamDisplay() {
     nextEl.textContent = (ni >= 0 && ni !== cur && chords[ni]) ? chords[ni].label : '';
   }
 
-  // 카메라 가사
-  const lyricsTextEl = document.getElementById('camLyricsText');
-  if (lyricsTextEl) {
-    const lyric = (cur >= 0 && chords[cur]) ? (chords[cur].lyrics || '') : '';
-    lyricsTextEl.textContent = lyric;
-  }
+  // 카메라 가사 (이전·현재·다음)
+  const lyricsTextEl  = document.getElementById('camLyricsText');
+  const lyricsPrevEl  = document.getElementById('camLyricsPrev');
+  const lyricsNextEl  = document.getElementById('camLyricsNext');
+  const pi2 = cur >= 0 ? prevRealIdx(cur) : -1;
+  const ni2 = cur >= 0 ? nextRealIdx(cur) : -1;
+  if (lyricsPrevEl) lyricsPrevEl.textContent = (pi2 >= 0 && pi2 !== cur && chords[pi2]) ? (chords[pi2].lyrics || '') : '';
+  if (lyricsTextEl)  lyricsTextEl.textContent  = (cur >= 0 && chords[cur]) ? (chords[cur].lyrics || '') : '';
+  if (lyricsNextEl) lyricsNextEl.textContent  = (ni2 >= 0 && ni2 !== cur && chords[ni2]) ? (chords[ni2].lyrics || '') : '';
 
   if ((isSpaceHeld || autoPlayActive) && cur !== -1) {
     const c = chords[cur];
