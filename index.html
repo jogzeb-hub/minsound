@@ -862,6 +862,7 @@
       <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder="C Am F#m Bb  /  옥타브: C^2 Am^4  /  빈칸: -"></textarea>
       <button class="code-text-btn-sec" id="codeTextExtractBtn">↓ 추출</button>
       <button class="code-text-btn-sec" id="codeTextHoldBtn">Hold 변환</button>
+      <button class="code-text-btn-sec" id="codeTextMergeLyricsBtn">가사 병합</button>
       <button class="code-text-btn" id="codeTextAddBtn">입력</button>
     </div>
     <div class="code-text-help" id="codeTextHelp">예: C Am F#m Bb  /  샵: F#m C#  /  플랫: Bb Eb  /  옥타브: C^2 G^4  /  빈칸: -</div>
@@ -1106,6 +1107,7 @@ C Am F G
         <button class="copy-btn" id="copyHoldBtn">📋 Hold<br><span class="copy-sub">(- 방식)</span></button>
         <button class="copy-btn" id="copySustainBtn">📋 Sustain<br><span class="copy-sub">(반복)</span></button>
         <button class="copy-btn" id="copyLyricsBtn">📋 가사+코드<br><span class="copy-sub">(코드:가사)</span></button>
+        <button class="copy-btn" id="copyLyricsMergeBtn">📋 가사 병합<br><span class="copy-sub">(코드 포함)</span></button>
         <button class="prompt-close-btn" id="aiPromptCloseBtn">✕</button>
       </div>
     </div>
@@ -1904,6 +1906,62 @@ function chordsToText() {
     return token;
   }).join(' ');
 }
+
+function mergeLyrics() {
+  const input = document.getElementById('codeTextInput');
+  const tokens = input.value.trim().split(/[\s,]+/).filter(Boolean);
+  let changed = 0;
+  for (let i = 0; i < tokens.length && i < chords.length; i++) {
+    const token = tokens[i];
+    if (token === '-' || !chords[i]) continue;
+    const colonIdx = token.indexOf(':');
+    if (colonIdx > 0) {
+      chords[i].lyrics = token.slice(colonIdx + 1);
+      changed++;
+    }
+  }
+  if (!lyricsVisible) {
+    lyricsVisible = true;
+    document.getElementById('lyricsToggleBtn').classList.add('active');
+  }
+  renderChordList();
+  updateCamDisplay();
+  const help = document.getElementById('codeTextHelp');
+  help.textContent = `가사 ${changed}개 병합됨`;
+  help.classList.remove('error');
+}
+
+document.getElementById('codeTextMergeLyricsBtn').addEventListener('click', mergeLyrics);
+
+document.getElementById('copyLyricsMergeBtn').addEventListener('click', () => {
+  const chordText = chordsToText();
+  if (!chordText) {
+    alert('먼저 코드를 입력해주세요.');
+    return;
+  }
+  const prompt = `악보 이미지에서 각 코드에 맞는 가사를 추출해서 코드:가사 형식으로 붙여줘.
+
+## 현재 코드 목록
+${chordText}
+
+## 규칙
+- 위 코드 목록의 순서와 개수를 그대로 유지
+- 각 코드에 해당 가사 음절을 코드명:가사 형식으로 출력
+- 가사 없는 코드(인트로·간주)는 코드명만 출력
+- -는 빈 슬롯이므로 그대로 - 출력
+- 한 줄로 출력, 설명 없이
+
+코드:가사 텍스트만 출력.`;
+  navigator.clipboard.writeText(prompt).then(() => {
+    const btn = document.getElementById('copyLyricsMergeBtn');
+    btn.innerHTML = '✅ 복사 완료!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '📋 가사 병합<br><span class="copy-sub">(코드 포함)</span>';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+});
 
 document.getElementById('codeTextExtractBtn').addEventListener('click', () => {
   const text = chordsToText();
