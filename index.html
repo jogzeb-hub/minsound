@@ -385,6 +385,15 @@
       cursor: pointer; font-size: 0.9rem; line-height: 1.4;
     }
     .bpm-step:hover { background: rgba(0,168,90,0.08); }
+    .bpm-input {
+      width: 46px; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); border-radius: 5px; padding: 2px 4px;
+      font-size: 0.82rem; font-weight: 700; text-align: center;
+      font-family: inherit; -moz-appearance: textfield;
+    }
+    .bpm-input::-webkit-outer-spin-button,
+    .bpm-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .bpm-input:focus { outline: none; border-color: var(--accent); }
     .auto-btn {
       flex: 1; background: var(--surface2); border: 1px solid var(--border);
       color: var(--text); border-radius: 8px; padding: 7px 10px;
@@ -720,10 +729,10 @@
       <button class="act-btn preview-play" id="emptyBtn">— 빈칸</button>
     </div>
     <div class="text-code-row">
-      <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder="C Am F G7 처럼 스페이스로 구분해서 입력"></textarea>
+      <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder="C Am F#m Bb  /  옥타브: C^2 Am^4  /  빈칸: -"></textarea>
       <button class="code-text-btn" id="codeTextAddBtn">입력</button>
     </div>
-    <div class="code-text-help" id="codeTextHelp">예: C Am F G7  /  빈칸은 - 로 입력</div>
+    <div class="code-text-help" id="codeTextHelp">예: C Am F#m Bb  /  샵: F#m C#  /  플랫: Bb Eb  /  옥타브: C^2 G^4  /  빈칸: -</div>
   </div>
 
   <div class="chord-list-section">
@@ -760,7 +769,7 @@
       <div class="bpm-ctrl">
         <span class="bpm-lbl">BPM</span>
         <button class="bpm-step" id="bpmDown">−</button>
-        <span class="bpm-num" id="bpmDisplay">80</span>
+        <input type="number" class="bpm-input" id="bpmInput" min="40" max="240" value="80">
         <button class="bpm-step" id="bpmUp">＋</button>
       </div>
       <button class="auto-btn" id="autoPlayBtn">▶ 자동재생</button>
@@ -785,7 +794,7 @@
     <div class="prompt-modal-box">
       <div class="prompt-modal-head">🤖 악보 → 코드 AI 변환 프롬프트</div>
       <div class="prompt-modal-desc">아래 프롬프트를 복사해서 Claude·ChatGPT 등 AI에 악보 이미지와 함께 붙여넣으세요. 출력된 텍스트를 minsound 입력창에 바로 사용할 수 있습니다.</div>
-      <div class="prompt-box" id="aiPromptText">악보 이미지에서 코드 기호만 추출해서 minsound 텍스트 입력 형식으로 변환해줘.
+      <div class="prompt-box" id="aiPromptText">악보 이미지에서 코드 기호를 추출해서 minsound 텍스트 입력 형식으로 변환해줘.
 
 ## 출력 규칙
 - 코드를 악보 순서대로 스페이스로 구분해서 나열
@@ -795,12 +804,22 @@
 - 코드 표기는 영문 그대로 (C, Am, F#m7, Bbmaj7 등)
 - 플랫은 b, 샵은 # 사용 (♭→b, ♯→#)
 
+## 옥타브 표기 (선택사항)
+- 기본 옥타브는 3 (표기 생략 가능)
+- 악보에서 명확히 판단 가능한 경우에만 코드 뒤에 ^숫자 붙여서 표기
+- 예: C^2(낮은 도), Am^4(높은 라m), G7^3(기본 솔7)
+- 범위: 1~6 (1=매우 낮음, 6=매우 높음)
+
 ## 지원 코드 형식 예시
 C  Cm  C7  Cmaj7  Cm7  Cm7b5  Cdim  Cdim7  Caug
 Csus2  Csus4  C6  Cm6  C9  Cmaj9  Cm9  Cadd9
+F#m  Bb  Ebmaj7  Abm7
 
-## 출력 예시
+## 출력 예시 (옥타브 없음)
 C Am F G7 - Am F C G
+
+## 출력 예시 (옥타브 포함)
+C^3 Am^3 F^3 G7^3 - Am^2 F^2 C^3 G^3
 
 악보 이미지를 분석해서 위 형식으로만 출력해. 설명 없이 코드 텍스트만.</div>
       <div class="prompt-modal-btns">
@@ -1073,7 +1092,15 @@ function parseTextChordToken(token) {
   const raw = token.trim();
   if (!raw) return null;
   if (raw === '-' || raw === '—' || raw.toLowerCase() === 'x' || raw.toLowerCase() === 'rest') return null;
-  const head = raw.split('/')[0].trim();
+  // 옥타브 접미사 추출: C^3, Am^2 등
+  let tokenBody = raw;
+  let forcedOct = null;
+  const octMatch = raw.match(/\^([1-6])$/);
+  if (octMatch) {
+    forcedOct = parseInt(octMatch[1]);
+    tokenBody = raw.slice(0, raw.length - octMatch[0].length);
+  }
+  const head = tokenBody.split('/')[0].trim();
   const m = head.match(/^([A-Ga-g])([#b♯♭]?)(.*)$/);
   if (!m) return undefined;
   const root = m[1].toUpperCase();
@@ -1081,7 +1108,7 @@ function parseTextChordToken(token) {
   const quality = normalizeQualityText(m[3]);
   if (!quality || !QUALITY_INTERVALS[quality]) return undefined;
   return {
-    root, acc, oct: bOct, quality, inv: 0,
+    root, acc, oct: forcedOct !== null ? forcedOct : bOct, quality, inv: 0,
     label: buildLabel(root, acc, quality),
     color: QUALITY_COLORS[quality] || '#00a85a',
   };
@@ -1972,11 +1999,19 @@ document.getElementById('soundSel').addEventListener('change', e => {
 });
 document.getElementById('bpmDown').addEventListener('click', () => {
   autoBpm = Math.max(40, autoBpm - 5);
-  document.getElementById('bpmDisplay').textContent = autoBpm;
+  document.getElementById('bpmInput').value = autoBpm;
 });
 document.getElementById('bpmUp').addEventListener('click', () => {
   autoBpm = Math.min(240, autoBpm + 5);
-  document.getElementById('bpmDisplay').textContent = autoBpm;
+  document.getElementById('bpmInput').value = autoBpm;
+});
+document.getElementById('bpmInput').addEventListener('change', e => {
+  autoBpm = Math.max(40, Math.min(240, parseInt(e.target.value) || 80));
+  e.target.value = autoBpm;
+});
+document.getElementById('bpmInput').addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  if (!isNaN(v) && v >= 40 && v <= 240) autoBpm = v;
 });
 document.getElementById('autoPlayBtn').addEventListener('click', startAutoPlay);
 
