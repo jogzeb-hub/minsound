@@ -1342,6 +1342,7 @@ const EP_URLS = {
 const EP1_BASE = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/electric_piano_1-mp3/';
 const EP2_BASE = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/electric_piano_2-mp3/';
 let ep1Poly = null, ep2Poly = null;
+let lastEP1Notes = [], lastEP2Notes = [], lastBalladNotes = [];
 
 function ensureEPSynth(which) {
   if (which === 'ep1' && ep1Poly) return;
@@ -1365,10 +1366,14 @@ function ensureEPSynth(which) {
 function playEP(which, root, acc, oct, quality, inv, hits = 1) {
   ensureEPSynth(which);
   const sampler = which === 'ep1' ? ep1Poly : ep2Poly;
+  const prev = which === 'ep1' ? lastEP1Notes : lastEP2Notes;
+  if (prev.length) sampler.triggerRelease(prev, Tone.now());
   const midiNotes = getChordMidi(root, acc, oct, quality, inv);
   const noteNames = midiNotes.map(midiToNoteName);
   const bassName = noteNames[0].replace(/(\d+)$/, m => String(Math.max(1, parseInt(m) - 1)));
   const upper = noteNames.length > 1 ? noteNames.slice(1) : [noteNames[0]];
+  const allNotes = [bassName, ...upper];
+  if (which === 'ep1') lastEP1Notes = allNotes; else lastEP2Notes = allNotes;
   const barDur = (60 / autoBpm) * 4;
   const half = barDur / 2;
   const noteDur = barDur * 0.88;
@@ -1433,10 +1438,12 @@ function bassLoudComp(noteName) {
 
 function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
   ensureBalladSynth();
+  if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
   const midiNotes = getChordMidi(root, acc, oct, quality, inv);
   const noteNames = midiNotes.map(midiToNoteName);
   const bassName = noteNames[0].replace(/(\d+)$/, m => String(Math.max(1, parseInt(m) - 1)));
   const upper = noteNames.length > 1 ? noteNames.slice(1) : [noteNames[0]];
+  lastBalladNotes = [bassName, ...upper];
   const barDur = (60 / autoBpm) * 4;
   const half = barDur / 2;
   const baseVel = 0.70;
