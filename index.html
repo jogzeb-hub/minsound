@@ -899,6 +899,8 @@
         <button class="transpose-btn" id="transposeUpBtn" title="전체 반음 올리기">+</button>
         <button class="undo-btn" id="undoBtn" title="되돌리기 (Ctrl+Z)">↩</button>
         <button class="undo-btn" id="redoBtn" title="다시 실행 (Ctrl+Y)">↪</button>
+        <button class="undo-btn" id="copyChordBtn" title="선택 복사 (Ctrl+C)">복사</button>
+        <button class="undo-btn" id="pasteChordBtn" title="붙여넣기 (Ctrl+V)">붙여넣기</button>
         <button class="break-btn" id="breakBtn" title="무제한 줄당에서 선택한 코드부터 새 줄 시작">줄바꿈</button>
         <button class="clear-all-btn" id="clearAllBtn">전체 삭제</button>
       </div>
@@ -2212,6 +2214,8 @@ document.getElementById('addBtn').addEventListener('click', () => {
 
 document.getElementById('undoBtn').addEventListener('click', undo);
 document.getElementById('redoBtn').addEventListener('click', redo);
+document.getElementById('copyChordBtn').addEventListener('click', () => copySelectedChord());
+document.getElementById('pasteChordBtn').addEventListener('click', () => { if (pasteChordBox()) renderChordList(); });
 
 document.getElementById('clearAllBtn').addEventListener('click', () => {
   if (!chords.length) return;
