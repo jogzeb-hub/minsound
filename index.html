@@ -657,6 +657,7 @@
     }
     .copy-btn:active { opacity: 0.85; }
     .copy-btn.copied { background: #2e9e5b; }
+    .copy-sub { font-size: 0.74rem; font-weight: 400; opacity: 0.85; }
     .prompt-close-btn {
       flex: 0 0 auto;
       background: rgba(255,255,255,0.06); color: var(--fg);
@@ -896,9 +897,9 @@ C Am F G
 
 코드 텍스트만 출력. 설명 없이.</div>
       <div class="prompt-modal-btns">
-        <button class="copy-btn" id="copySimpleBtn">📋 Simple (코드순)</button>
-        <button class="copy-btn" id="copyHoldBtn">📋 Hold (- 방식)</button>
-        <button class="copy-btn" id="copySustainBtn">📋 Sustain (반복)</button>
+        <button class="copy-btn" id="copySimpleBtn">📋 Simple<br><span class="copy-sub">(코드순)</span></button>
+        <button class="copy-btn" id="copyHoldBtn">📋 Hold<br><span class="copy-sub">(- 방식)</span></button>
+        <button class="copy-btn" id="copySustainBtn">📋 Sustain<br><span class="copy-sub">(반복)</span></button>
         <button class="prompt-close-btn" id="aiPromptCloseBtn">✕</button>
       </div>
     </div>
@@ -2115,17 +2116,17 @@ function copyPrompt(btnId, srcId, label) {
   const text = document.getElementById(srcId).textContent;
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById(btnId);
-    btn.textContent = '✅ 복사 완료!';
+    btn.innerHTML = '✅ 복사 완료!';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = label; btn.classList.remove('copied'); }, 2000);
+    setTimeout(() => { btn.innerHTML = label; btn.classList.remove('copied'); }, 2000);
   });
 }
 document.getElementById('copySimpleBtn').addEventListener('click', () =>
-  copyPrompt('copySimpleBtn', 'aiPromptSimple', '📋 Simple (코드순)'));
+  copyPrompt('copySimpleBtn', 'aiPromptSimple', '📋 Simple<br><span class="copy-sub">(코드순)</span>'));
 document.getElementById('copyHoldBtn').addEventListener('click', () =>
-  copyPrompt('copyHoldBtn', 'aiPromptHold', '📋 Hold (- 방식)'));
+  copyPrompt('copyHoldBtn', 'aiPromptHold', '📋 Hold<br><span class="copy-sub">(- 방식)</span>'));
 document.getElementById('copySustainBtn').addEventListener('click', () =>
-  copyPrompt('copySustainBtn', 'aiPromptSustain', '📋 Sustain (반복)'));
+  copyPrompt('copySustainBtn', 'aiPromptSustain', '📋 Sustain<br><span class="copy-sub">(반복)</span>'));
 
 // ── 초기화 ──
 updatePreview();
