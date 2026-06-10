@@ -9,6 +9,8 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
+      --card-size: 68px;
+      --card-name-fs: 1.05rem;
       --bg: #f6f9f5;
       --surface: #ffffff;
       --surface2: #edf6ef;
@@ -254,14 +256,14 @@
     .row-num {
       font-size: 0.6rem;
       color: var(--muted);
-      min-width: 20px;
+      min-width: 18px;
       text-align: right;
-      line-height: 68px;
+      line-height: var(--card-size);
       flex-shrink: 0;
       user-select: none;
     }
 
-    .row-cards { display: flex; gap: 7px; flex-wrap: nowrap; }
+    .row-cards { display: flex; gap: 5px; flex-wrap: nowrap; flex: 1; min-width: 0; }
 
     .chord-card {
       position: relative;
@@ -269,22 +271,22 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 68px; height: 68px;
+      width: var(--card-size); height: var(--card-size);
       background: var(--surface);
       border: 2px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       transition: border-color 0.12s, background 0.12s, box-shadow 0.12s, transform 0.12s;
       user-select: none;
       flex-shrink: 0;
     }
-    .chord-card.active { transform: scale(1.08); }
+    .chord-card.active { transform: scale(1.06); }
     .chord-card.next-up { border-style: dashed; border-color: rgba(0,168,90,0.36); }
     .chord-card:not(.empty-card) { cursor: pointer; }
     .chord-card:not(.empty-card):not(.active):hover { background: rgba(0,168,90,0.05); }
     .chord-card.empty-card { opacity: 0.3; border-style: dashed; cursor: default; }
     .chord-card.empty-card .card-name { font-size: 1.4rem; color: var(--muted); }
     .chord-card.selected { outline: 2px solid #ffe66d; outline-offset: 2px; }
-    .chord-card.br-card { width: 30px; min-width: 30px; border-style: dashed; opacity: 0.4; color: var(--muted); font-size: 1rem; cursor: default; }
+    .chord-card.br-card { width: 24px; min-width: 24px; border-style: dashed; opacity: 0.4; color: var(--muted); font-size: 1rem; cursor: default; }
     .chord-card.line-break-before::before {
       content: "";
       position: absolute;
@@ -297,7 +299,7 @@
     }
 
     .card-num { font-size: 0.57rem; color: var(--muted); }
-    .card-name { font-size: 1.05rem; font-weight: 800; margin-top: 2px; color: var(--text); }
+    .card-name { font-size: var(--card-name-fs); font-weight: 800; margin-top: 1px; color: var(--text); }
 
     .del-btn {
       position: absolute; top: 2px; right: 5px;
@@ -553,14 +555,32 @@
       position: absolute; bottom: 100px; left: 0; right: 0;
       z-index: 2; text-align: center; pointer-events: none;
     }
+    .cam-neighbors {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 0 10px;
+    }
+    .cam-adj {
+      font-size: clamp(1.6rem, 6.5vw, 3.2rem);
+      font-weight: 800;
+      color: rgba(255,255,255,0.30);
+      letter-spacing: -1px;
+      line-height: 1;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      flex: 1;
+      transition: color 0.15s;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cam-adj.adj-prev { text-align: right; }
+    .cam-adj.adj-next { text-align: left; }
     .cam-chord-name {
-      font-size: clamp(4rem, 16vw, 8rem);
+      font-size: clamp(3.5rem, 14vw, 7rem);
       font-weight: 900;
       color: #fff;
       text-shadow: 0 4px 28px rgba(0,0,0,0.45);
       letter-spacing: -3px;
       line-height: 1;
       transition: color 0.1s, opacity 0.1s;
+      flex-shrink: 0;
     }
     @keyframes playing-pulse {
       0%,100% { text-shadow: 0 4px 28px rgba(0,0,0,0.45); }
@@ -734,7 +754,11 @@
     <div class="cam-grad-bot"></div>
     <div class="cam-top-bar">minsound</div>
     <div class="cam-center">
-      <div class="cam-chord-name" id="camChordName">—</div>
+      <div class="cam-neighbors">
+        <div class="cam-adj adj-prev" id="camPrevChord"></div>
+        <div class="cam-chord-name" id="camChordName">—</div>
+        <div class="cam-adj adj-next" id="camNextChord"></div>
+      </div>
       <div class="cam-chord-num" id="camChordNum"></div>
     </div>
     <div class="cam-controls">
@@ -1437,6 +1461,7 @@ function renderChordList() {
 
 document.getElementById('cprSel').addEventListener('change', e => {
   chordsPerRow = parseInt(e.target.value);
+  updateCardSize();
   renderChordList();
 });
 
@@ -1483,6 +1508,36 @@ document.getElementById('clearAllBtn').addEventListener('click', () => {
   btn.textContent = 'SPACE';
 });
 
+// ── 반응형 카드 크기 ──
+function updateCardSize() {
+  const section = document.querySelector('.chord-list-section');
+  if (!section || chordsPerRow === 0) {
+    document.documentElement.style.setProperty('--card-size', '68px');
+    document.documentElement.style.setProperty('--card-name-fs', '1.05rem');
+    return;
+  }
+  const availW = section.clientWidth - 32 - 26; // padding + row-num
+  const gapTotal = (chordsPerRow - 1) * 5;
+  const sz = Math.min(68, Math.max(34, Math.floor((availW - gapTotal) / chordsPerRow)));
+  const nameFz = sz >= 60 ? '1.05rem' : sz >= 50 ? '0.90rem' : sz >= 42 ? '0.76rem' : '0.64rem';
+  document.documentElement.style.setProperty('--card-size', sz + 'px');
+  document.documentElement.style.setProperty('--card-name-fs', nameFz);
+}
+
+// ── 재생 중 활성 줄 맨 위로 스크롤 ──
+function scrollToActive() {
+  if (currentIdx < 0) return;
+  requestAnimationFrame(() => {
+    const section = document.querySelector('.chord-list-section');
+    const card = document.querySelector(`#chordItems [data-idx="${currentIdx}"]`);
+    const row = card?.closest('.chord-row');
+    if (!row || !section) return;
+    const target = section.scrollTop + row.getBoundingClientRect().top
+                   - section.getBoundingClientRect().top - 12;
+    section.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+  });
+}
+
 // ── 자동재생 ──
 function autoPlayStep() {
   if (!autoPlayActive || chords.length === 0) return;
@@ -1494,6 +1549,7 @@ function autoPlayStep() {
   isSpaceHeld = true;
   renderChordList();
   updateCamDisplay();
+  scrollToActive();
   const spBtn = document.getElementById('spaceBtn');
   spBtn.classList.add('pressed');
   spBtn.textContent = c.label;
@@ -1599,6 +1655,7 @@ async function onPress() {
   playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
   renderChordList();
   updateCamDisplay();
+  scrollToActive();
   const btn = document.getElementById('spaceBtn');
   btn.classList.add('pressed');
   btn.textContent = c.label;
@@ -1780,10 +1837,23 @@ let _camStream = null, _wakeLock = null;
 function updateCamDisplay() {
   const nameEl = document.getElementById('camChordName');
   const numEl  = document.getElementById('camChordNum');
+  const prevEl = document.getElementById('camPrevChord');
+  const nextEl = document.getElementById('camNextChord');
   if (!nameEl) return;
 
   const cur = currentRealIdx();
-  if (isSpaceHeld && cur !== -1) {
+
+  // 이전 / 다음 코드 표시
+  if (prevEl) {
+    const pi = cur >= 0 ? prevRealIdx(cur) : -1;
+    prevEl.textContent = (pi >= 0 && pi !== cur && chords[pi]) ? chords[pi].label : '';
+  }
+  if (nextEl) {
+    const ni = cur >= 0 ? nextRealIdx(cur) : -1;
+    nextEl.textContent = (ni >= 0 && ni !== cur && chords[ni]) ? chords[ni].label : '';
+  }
+
+  if ((isSpaceHeld || autoPlayActive) && cur !== -1) {
     const c = chords[cur];
     nameEl.textContent = c.label;
     nameEl.style.color = c.color;
@@ -1840,7 +1910,9 @@ document.getElementById('autoPlayBtn').addEventListener('click', startAutoPlay);
 
 // ── 초기화 ──
 updatePreview();
+updateCardSize();
 renderChordList();
+window.addEventListener('resize', () => { updateCardSize(); renderChordList(); });
 </script>
 
 </body>
