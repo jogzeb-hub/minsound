@@ -1996,6 +1996,22 @@ function deleteOrClear(idx) {
   }
 }
 
+function deleteSelected() {
+  const r = getSelectionRange();
+  if (!r) {
+    if (currentIdx >= 0 && currentIdx < chords.length) {
+      deleteOrClear(currentIdx);
+      renderChordList(); updateCamDisplay();
+    }
+    return;
+  }
+  saveHistory();
+  chords.splice(r.start, r.end - r.start + 1);
+  currentIdx = chords.length > 0 ? Math.min(r.start, chords.length - 1) : -1;
+  clearSelection();
+  renderChordList(); updateCamDisplay();
+}
+
 function changeChordOct(idx, delta) {
   const c = chords[idx];
   if (!c) return;
@@ -2554,6 +2570,8 @@ window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.code === 'Space' || e.code === 'ArrowDown') {
     e.preventDefault(); if (!e.repeat) onPress();
+  } else if (e.code === 'Delete') {
+    e.preventDefault(); if (!e.repeat) deleteSelected();
   } else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft' || e.code === 'Backspace') {
     e.preventDefault();
     if (!e.repeat) { e.code === 'ArrowRight' ? goForward() : goBack(); }
