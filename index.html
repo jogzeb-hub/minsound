@@ -944,6 +944,7 @@
         <button class="bpm-step" id="bpmUp">＋</button>
       </div>
       <button class="auto-btn" id="autoPlayBtn">▶ 자동재생</button>
+      <button class="auto-btn" id="restrikeBtn" style="flex:0;padding:7px 9px;font-size:0.72rem" title="빈칸(-) 슬롯에서 이전 코드를 재타격">빈칸 재타격</button>
       <button class="bpm-step" id="resetBtn" title="처음으로">⏮</button>
     </div>
     <div class="nav-btns">
@@ -1315,6 +1316,8 @@ let currentSound = 'basic';
 let autoBpm = 80;
 let autoPlayActive = false;
 let autoPlayTimer = null;
+let autoRestrike = false;
+let lastAutoChord = null;
 let balladPoly = null;
 
 // ── 오디오 ──
@@ -2297,6 +2300,33 @@ function scrollToActive() {
 // ── 자동재생 ──
 function autoPlayStep() {
   if (!autoPlayActive || chords.length === 0) return;
+
+  if (autoRestrike) {
+    // 빈칸 재타격 모드: 슬롯 하나씩 이동, null이면 이전 코드 재타격
+    if (currentIdx < 0) currentIdx = 0;
+    const slot = chords[currentIdx];
+    const c = slot || lastAutoChord;
+    if (!c) { currentIdx = (currentIdx + 1) % chords.length; autoPlayStep(); return; }
+    if (slot) lastAutoChord = slot;
+    playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, 1);
+    isSpaceHeld = true;
+    renderChordList(); updateCamDisplay(); scrollToActive();
+    const spBtn = document.getElementById('spaceBtn');
+    spBtn.classList.add('pressed');
+    spBtn.textContent = c.label;
+    const beatMs = (60 / autoBpm) * 1000;
+    autoPlayTimer = setTimeout(() => {
+      if (!autoPlayActive) return;
+      if (currentSound === 'basic') stopSound();
+      isSpaceHeld = false;
+      currentIdx = (currentIdx + 1) % chords.length;
+      renderChordList(); updateCamDisplay();
+      autoPlayTimer = setTimeout(() => { if (autoPlayActive) autoPlayStep(); }, 80);
+    }, Math.max(150, beatMs - 80));
+    return;
+  }
+
+  // 기본 모드: null 슬롯 = 이전 코드 길이 연장
   const idx = currentRealIdx();
   if (idx === -1) { stopAutoPlay(); return; }
   currentIdx = idx;
@@ -2306,9 +2336,7 @@ function autoPlayStep() {
   const hits = Math.floor(effectiveBeats / 2);
   playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, hits);
   isSpaceHeld = true;
-  renderChordList();
-  updateCamDisplay();
-  scrollToActive();
+  renderChordList(); updateCamDisplay(); scrollToActive();
   const spBtn = document.getElementById('spaceBtn');
   spBtn.classList.add('pressed');
   spBtn.textContent = c.label;
@@ -2318,12 +2346,8 @@ function autoPlayStep() {
     if (currentSound === 'basic') stopSound();
     isSpaceHeld = false;
     currentIdx = (idx + beats) % chords.length;
-    renderChordList();
-    updateCamDisplay();
-    autoPlayTimer = setTimeout(() => {
-      if (!autoPlayActive) return;
-      autoPlayStep();
-    }, 80);
+    renderChordList(); updateCamDisplay();
+    autoPlayTimer = setTimeout(() => { if (autoPlayActive) autoPlayStep(); }, 80);
   }, Math.max(200, totalMs - 80));
 }
 
@@ -2332,10 +2356,10 @@ function startAutoPlay() {
   if (!chords.length) return;
   ensureAudio().then(() => {
     autoPlayActive = true;
+    lastAutoChord = null;
     document.getElementById('autoPlayBtn').classList.add('active');
     document.getElementById('autoPlayBtn').textContent = '⏹ 자동재생 중';
-    // currentIdx가 -1이면 첫 코드부터
-    if (currentIdx < 0 || currentIdx >= chords.length) currentIdx = -1;
+    if (currentIdx < 0 || currentIdx >= chords.length) currentIdx = autoRestrike ? 0 : -1;
     autoPlayStep();
   });
 }
@@ -2693,6 +2717,12 @@ document.getElementById('bpmInput').addEventListener('input', e => {
   if (!isNaN(v) && v >= 40 && v <= 240) autoBpm = v;
 });
 document.getElementById('autoPlayBtn').addEventListener('click', startAutoPlay);
+document.getElementById('restrikeBtn').addEventListener('click', () => {
+  autoRestrike = !autoRestrike;
+  const btn = document.getElementById('restrikeBtn');
+  btn.classList.toggle('active', autoRestrike);
+  btn.textContent = autoRestrike ? '빈칸 재타격: ON' : '빈칸 재타격';
+});
 
 // ── 가사 토글 ──
 document.getElementById('lyricsToggleBtn').addEventListener('click', () => {
