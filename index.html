@@ -860,6 +860,7 @@
     </div>
     <div class="text-code-row">
       <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder="C Am F#m Bb  /  옥타브: C^2 Am^4  /  빈칸: -"></textarea>
+      <button class="code-text-btn-sec" id="codeTextExtractBtn">↓ 추출</button>
       <button class="code-text-btn-sec" id="codeTextHoldBtn">Hold 변환</button>
       <button class="code-text-btn" id="codeTextAddBtn">입력</button>
     </div>
@@ -1891,6 +1892,27 @@ document.getElementById('breakBtn').addEventListener('click', () => {
 });
 document.getElementById('transposeDownBtn').addEventListener('click', () => transposeAllChords(-1));
 document.getElementById('transposeUpBtn').addEventListener('click', () => transposeAllChords(1));
+
+function chordsToText() {
+  return chords.map(c => {
+    if (!c) return '-';
+    const root = c.root + (c.acc === '#' ? '#' : c.acc === 'b' ? 'b' : '');
+    const qual = c.quality === 'maj' ? '' : c.quality;
+    let token = root + qual;
+    if ((c.oct ?? 3) !== 3) token += '^' + c.oct;
+    if (c.lyrics) token += ':' + c.lyrics;
+    return token;
+  }).join(' ');
+}
+
+document.getElementById('codeTextExtractBtn').addEventListener('click', () => {
+  const text = chordsToText();
+  const input = document.getElementById('codeTextInput');
+  input.value = text;
+  input.focus();
+  document.getElementById('codeTextHelp').textContent = '현재 코드 목록을 텍스트로 추출했습니다.';
+  document.getElementById('codeTextHelp').classList.remove('error');
+});
 
 document.getElementById('codeTextAddBtn').addEventListener('click', addTextChords);
 document.getElementById('codeTextHoldBtn').addEventListener('click', () => {
