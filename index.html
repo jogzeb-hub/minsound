@@ -388,7 +388,13 @@
       font-variant-numeric: tabular-nums;
     }
     .chord-card.dragging { opacity: 0.45; transform: scale(0.96); }
-    .chord-card.drop-target { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .chord-card.drop-insert::before,
+    .chord-card.drop-insert-after::after {
+      content: ''; position: absolute; top: -2px; bottom: -2px; width: 3px;
+      background: var(--accent); border-radius: 2px; z-index: 10; pointer-events: none;
+    }
+    .chord-card.drop-insert::before { left: -2px; }
+    .chord-card.drop-insert-after::after { right: -2px; }
 
     /* 가사 모드 */
     .lyrics-mode .chord-card:not(.empty-card) { height: auto; justify-content: flex-start; padding-top: 6px; }
@@ -2620,7 +2626,7 @@ window.addEventListener('pointermove', e => {
 
   if (!dragWatch.started) {
     dragWatch.started = true;
-    dragState = { start: dragWatch.range.start, end: dragWatch.range.end, to: dragWatch.idx };
+    dragState = { start: dragWatch.range.start, end: dragWatch.range.end, insertAt: -1 };
     dragWatch.card.classList.add('dragging');
     const ghost = ensureDragGhost();
     const count = dragWatch.range.end - dragWatch.range.start + 1;
@@ -2631,30 +2637,47 @@ window.addEventListener('pointermove', e => {
   const ghost = ensureDragGhost();
   ghost.style.left = (e.clientX + 14) + 'px';
   ghost.style.top = (e.clientY - 10) + 'px';
-  document.querySelectorAll('.chord-card.drop-target').forEach(el => el.classList.remove('drop-target'));
+  document.querySelectorAll('.chord-card.drop-insert,.chord-card.drop-insert-after').forEach(el => {
+    el.classList.remove('drop-insert', 'drop-insert-after');
+  });
 
   const el = document.elementFromPoint(e.clientX, e.clientY);
   const target = el?.closest('.chord-card');
-  const to = target ? parseInt(target.dataset.idx, 10) : -1;
-  if (target && to >= 0 && dragState) {
-    dragState.to = to;
-    if (to < dragState.start || to > dragState.end) target.classList.add('drop-target');
+  if (target && dragState) {
+    const to = parseInt(target.dataset.idx, 10);
+    const rect = target.getBoundingClientRect();
+    const insertAt = e.clientX < rect.left + rect.width / 2 ? to : to + 1;
+    dragState.insertAt = insertAt;
+    const { start, end } = dragState;
+    if (insertAt < start || insertAt > end + 1) {
+      if (insertAt === to + 1) target.classList.add('drop-insert-after');
+      else target.classList.add('drop-insert');
+    }
+  } else if (dragState) {
+    dragState.insertAt = -1;
   }
 });
 
 window.addEventListener('pointerup', () => {
   if (!dragWatch) return;
   const didDrag = dragWatch.started;
-  if (dragState && dragState.to >= 0 && dragState.to !== dragState.start) {
-    saveHistory();
-    const src = chords[dragState.start];
-    chords[dragState.to] = src ? { ...src } : null;
-    renderChordList();
-    updateCamDisplay();
+  if (dragState && didDrag && dragState.insertAt >= 0) {
+    const { start, end, insertAt } = dragState;
+    const count = end - start + 1;
+    if (insertAt < start || insertAt > end + 1) {
+      saveHistory();
+      const items = chords.splice(start, count);
+      const adj = insertAt > end ? insertAt - count : insertAt;
+      chords.splice(adj, 0, ...items);
+      currentIdx = adj;
+      setSelectionRange(adj, adj + count - 1);
+      renderChordList();
+      updateCamDisplay();
+    }
   }
   ensureDragGhost().classList.add('hidden');
-  document.querySelectorAll('.chord-card.dragging,.chord-card.drop-target').forEach(el => {
-    el.classList.remove('dragging', 'drop-target');
+  document.querySelectorAll('.chord-card.dragging,.chord-card.drop-insert,.chord-card.drop-insert-after').forEach(el => {
+    el.classList.remove('dragging', 'drop-insert', 'drop-insert-after');
   });
   dragWatch = null;
   dragState = null;
