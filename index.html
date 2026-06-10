@@ -602,7 +602,7 @@
     }
     .cam-controls {
       position: absolute; bottom: 30px; left: 0; right: 0;
-      display: flex; justify-content: center; z-index: 3;
+      display: flex; justify-content: center; gap: 12px; z-index: 3;
     }
     .cam-exit-btn {
       background: rgba(255,255,255,0.12);
@@ -857,6 +857,7 @@ C^3 Am^3 F^3 G7^3 - Am^2 F^2 C^3 G^3
       <div class="cam-chord-num" id="camChordNum"></div>
     </div>
     <div class="cam-controls">
+      <button class="cam-exit-btn" id="camResetBtn">⏮ 처음</button>
       <button class="cam-exit-btn" id="camExitBtn">✕ 나가기</button>
     </div>
   </div>
@@ -1845,6 +1846,7 @@ spaceBtn.addEventListener('pointerup', () => onRelease());
 spaceBtn.addEventListener('pointercancel', () => onRelease());
 
 document.getElementById('resetBtn').addEventListener('click', goToStart);
+document.getElementById('camResetBtn').addEventListener('click', goToStart);
 document.getElementById('backBtn').addEventListener('click', goBack);
 document.getElementById('nextBtn').addEventListener('click', goForward);
 
