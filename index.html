@@ -572,6 +572,8 @@
       padding: 9px 0;
       border-bottom: 1px solid var(--border);
     }
+    .modal-slot-sample { border-bottom: 1px solid var(--accent); background: rgba(0,168,90,0.06); border-radius: 6px; margin-bottom: 4px; padding: 9px 6px; }
+    .modal-slot-sample .slot-name { color: var(--accent); }
     .slot-info { flex: 1; min-width: 0; }
     .slot-name { display: block; font-size: 0.84rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .slot-date { display: block; font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
@@ -1493,7 +1495,7 @@ function ensureEPSynth(which) {
   const sampler = new Tone.Sampler({
     urls: EP_URLS,
     baseUrl: which === 'ep1' ? EP1_BASE : EP2_BASE,
-    release: 2.5,
+    release: 1.5,
   });
   sampler.connect(g);
   if (which === 'ep1') ep1Poly = sampler;
@@ -1503,8 +1505,8 @@ function ensureEPSynth(which) {
 function playEP(which, root, acc, oct, quality, inv, hits = 1) {
   ensureEPSynth(which);
   const sampler = which === 'ep1' ? ep1Poly : ep2Poly;
-  const prev = which === 'ep1' ? lastEP1Notes : lastEP2Notes;
-  if (prev.length) sampler.triggerRelease(prev, Tone.now());
+  sampler.releaseAll(Tone.now());
+  if (which === 'ep1') lastEP1Notes = []; else lastEP2Notes = [];
   const midiNotes = getChordMidi(root, acc, oct, quality, inv);
   const noteNames = midiNotes.map(midiToNoteName);
   const bassName = noteNames[0].replace(/(\d+)$/, m => String(Math.max(1, parseInt(m) - 1)));
@@ -1516,7 +1518,7 @@ function playEP(which, root, acc, oct, quality, inv, hits = 1) {
   const noteDur = barDur * 0.88;
   const baseVel = 0.95;
   const SPREAD = 0.018;
-  const now = Tone.now() + 0.01;
+  const now = Tone.now() + 0.05;
   for (let hit = 0; hit < hits; hit++) {
     const ht = now + hit * half;
     const vs = hit === 0 ? 1.0 : 0.82;
@@ -2710,10 +2712,34 @@ function renderSaveModal() {
   const list = document.getElementById('saveSlotList');
   const saves = getSaves();
   list.innerHTML = '';
-  if (!saves.length) {
-    list.innerHTML = '<div class="modal-empty">저장된 프로젝트가 없어요</div>';
-    return;
-  }
+  // 고정 샘플 항목 (항상 상단 표시, localStorage 무관)
+  const sampleRow = document.createElement('div');
+  sampleRow.className = 'modal-slot modal-slot-sample';
+  sampleRow.innerHTML = `
+    <div class="slot-info">
+      <span class="slot-name">🎵 ${SAMPLE_PROJECT.name}</span>
+      <span class="slot-date">샘플 · ${SAMPLE_PROJECT.options.bpm}BPM · ${SAMPLE_PROJECT.options.sound} · 줄당${SAMPLE_PROJECT.options.cpr}</span>
+    </div>
+    <button class="slot-load">열기</button>
+  `;
+  sampleRow.querySelector('.slot-load').addEventListener('click', () => {
+    chords = JSON.parse(JSON.stringify(SAMPLE_PROJECT.chords));
+    setAutoBpm(SAMPLE_PROJECT.options.bpm);
+    currentSound = SAMPLE_PROJECT.options.sound;
+    document.getElementById('soundSel').value = currentSound;
+    chordsPerRow = SAMPLE_PROJECT.options.cpr;
+    document.getElementById('cprSel').value = chordsPerRow;
+    updateCardSize();
+    setLyricsVisible(SAMPLE_PROJECT.options.lyricsVisible);
+    setCamLyricsOn(SAMPLE_PROJECT.options.camLyricsOn);
+    currentIdx = -1; clearSelection(); isSpaceHeld = false;
+    undoStack = []; redoStack = [];
+    stopSound();
+    renderChordList(); updateCamDisplay();
+    document.getElementById('projectModal').classList.add('hidden');
+  });
+  list.appendChild(sampleRow);
+  if (!saves.length) return;
   saves.forEach(s => {
     const savedFlags = [
       getSavedProjectOption(s, 'lyricsVisible', false) ? '가사표시' : '',
@@ -2907,9 +2933,17 @@ document.getElementById('copyLyricsBtn').addEventListener('click', () =>
   copyPrompt('copyLyricsBtn', 'aiPromptLyrics', '📋 가사+코드<br><span class="copy-sub">(코드"가사")</span>'));
 
 // ── 초기화 ──
+// 저장된 프로젝트가 없을 때만 샘플 코드를 뷰에 표시 (localStorage 비변경)
 if (!getSaves().length) {
-  putSaves([SAMPLE_PROJECT]);
-  loadFromSlot(SAMPLE_PROJECT.name);
+  chords = JSON.parse(JSON.stringify(SAMPLE_PROJECT.chords));
+  setAutoBpm(SAMPLE_PROJECT.options.bpm);
+  currentSound = SAMPLE_PROJECT.options.sound;
+  document.getElementById('soundSel').value = currentSound;
+  const cpr = SAMPLE_PROJECT.options.cpr;
+  chordsPerRow = cpr;
+  document.getElementById('cprSel').value = cpr;
+  lyricsVisible = SAMPLE_PROJECT.options.lyricsVisible;
+  camLyricsOn = SAMPLE_PROJECT.options.camLyricsOn;
 }
 setLyricsVisible(lyricsVisible, false);
 setCamLyricsOn(camLyricsOn);
