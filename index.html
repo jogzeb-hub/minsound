@@ -2252,7 +2252,8 @@ function autoPlayStep() {
   currentIdx = idx;
   const c = chords[currentIdx];
   const beats = chordBeatCount(idx);
-  const hits = Math.max(1, Math.floor(beats / 2));
+  const effectiveBeats = Math.max(4, beats);
+  const hits = Math.floor(effectiveBeats / 2);
   playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, hits);
   isSpaceHeld = true;
   renderChordList();
@@ -2261,7 +2262,7 @@ function autoPlayStep() {
   const spBtn = document.getElementById('spaceBtn');
   spBtn.classList.add('pressed');
   spBtn.textContent = c.label;
-  const totalMs = (60 / autoBpm) * beats * 1000;
+  const totalMs = (60 / autoBpm) * effectiveBeats * 1000;
   autoPlayTimer = setTimeout(() => {
     if (!autoPlayActive) return;
     if (currentSound === 'basic') stopSound();
