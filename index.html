@@ -1200,6 +1200,7 @@ const TEXT_QUALITY_ALIASES = {
 
 // ── 빌더 상태 ──
 let bRoot = 'C', bAcc = 'n', bQuality = 'maj', bOct = 3, bInv = 0;
+let bIsRest = false;
 
 // ── 목록 상태 ──
 let chords = [];
@@ -1471,7 +1472,10 @@ function transposeAllChords(semis) {
 
 // ── 빌더 UI ──
 function updatePreview() {
-  document.getElementById('previewName').textContent = buildLabel(bRoot, bAcc, bQuality);
+  const el = document.getElementById('previewName');
+  el.textContent = bIsRest ? '—' : buildLabel(bRoot, bAcc, bQuality);
+  el.style.opacity = bIsRest ? '0.4' : '1';
+  document.getElementById('emptyBtn').classList.toggle('sel', bIsRest);
 }
 
 function setupGroup(id, setter) {
@@ -1485,10 +1489,10 @@ function setupGroup(id, setter) {
   });
 }
 
-setupGroup('rootGrp', v => { bRoot = v; });
-setupGroup('accGrp',  v => { bAcc = v; });
-setupGroup('octGrp',  v => { bOct = parseInt(v); });
-setupGroup('invGrp',  v => { bInv = parseInt(v); });
+setupGroup('rootGrp', v => { bRoot = v; bIsRest = false; updatePreview(); });
+setupGroup('accGrp',  v => { bAcc = v; bIsRest = false; updatePreview(); });
+setupGroup('octGrp',  v => { bOct = parseInt(v); bIsRest = false; updatePreview(); });
+setupGroup('invGrp',  v => { bInv = parseInt(v); bIsRest = false; updatePreview(); });
 
 // ── 코드 카테고리 탭 ──
 const QUAL_CATS = {
@@ -1516,6 +1520,7 @@ function renderQualButtons() {
     btn.textContent = QUAL_DISPLAY[q] || q;
     btn.addEventListener('click', () => {
       bQuality = q;
+      bIsRest = false;
       grp.querySelectorAll('.tog').forEach(b => b.classList.remove('sel'));
       btn.classList.add('sel');
       updatePreview();
@@ -1857,7 +1862,7 @@ function renderChordList() {
       card.addEventListener('click', e => {
         if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.lyric-input')) return;
         if (dragJustFinished) { dragJustFinished = false; return; }
-        chords[i] = {
+        chords[i] = bIsRest ? null : {
           root: bRoot, acc: bAcc, oct: bOct, quality: bQuality, inv: bInv,
           label: buildLabel(bRoot, bAcc, bQuality),
           color: QUALITY_COLORS[bQuality] || '#00a85a',
@@ -1908,13 +1913,18 @@ document.getElementById('codeTextInput').addEventListener('keydown', e => {
 });
 
 document.getElementById('emptyBtn').addEventListener('click', () => {
-  chords.push(null);
-  selectChordIdx(chords.length - 1);
-  renderChordList();
-  updateCamDisplay();
+  bIsRest = true;
+  updatePreview();
 });
 
 document.getElementById('addBtn').addEventListener('click', () => {
+  if (bIsRest) {
+    chords.push(null);
+    selectChordIdx(chords.length - 1);
+    renderChordList();
+    updateCamDisplay();
+    return;
+  }
   chords.push({
     root: bRoot, acc: bAcc, oct: bOct, quality: bQuality, inv: bInv,
     label: buildLabel(bRoot, bAcc, bQuality),
