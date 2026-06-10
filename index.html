@@ -1875,25 +1875,10 @@ function pasteChordBox() {
   saveHistory();
   const items = chordClipboard.map(cloneChord);
   const r = getSelectionRange();
-  if (r) {
-    const removeCount = r.end - r.start + 1;
-    if (currentIdx >= r.start && currentIdx <= r.end) currentIdx = r.start;
-    else if (currentIdx > r.end) currentIdx += items.length - removeCount;
-    if (r.start === r.end) {
-      items.forEach((item, i) => {
-        const idx = r.start + i;
-        if (idx < chords.length) chords[idx] = item;
-        else chords.push(item);
-      });
-    } else {
-      chords.splice(r.start, removeCount, ...items);
-    }
-    setSelectionRange(r.start, r.start + items.length - 1);
-  } else {
-    const start = chords.length;
-    chords.push(...items);
-    setSelectionRange(start, start + items.length - 1);
-  }
+  const insertAt = r ? r.end + 1 : chords.length;
+  chords.splice(insertAt, 0, ...items);
+  if (currentIdx >= insertAt) currentIdx += items.length;
+  setSelectionRange(insertAt, insertAt + items.length - 1);
   renderChordList();
   updateCamDisplay();
   return true;
@@ -2395,17 +2380,15 @@ function onRelease() {
 }
 
 window.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   const key = e.key.toLowerCase();
-  if ((e.ctrlKey || e.metaKey) && key === 'z' && !e.shiftKey) {
-    e.preventDefault(); undo();
-  } else if ((e.ctrlKey || e.metaKey) && (key === 'y' || (key === 'z' && e.shiftKey))) {
-    e.preventDefault(); redo();
-  } else if ((e.ctrlKey || e.metaKey) && key === 'c') {
-    if (copySelectedChord()) e.preventDefault();
-  } else if ((e.ctrlKey || e.metaKey) && key === 'v') {
-    if (pasteChordBox()) e.preventDefault();
-  } else if (e.code === 'Space' || e.code === 'ArrowDown') {
+  if (e.ctrlKey || e.metaKey) {
+    if (key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+    if (key === 'y' || (key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); return; }
+    if (key === 'c') { if (copySelectedChord()) e.preventDefault(); return; }
+    if (key === 'v') { if (pasteChordBox()) e.preventDefault(); return; }
+  }
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.code === 'Space' || e.code === 'ArrowDown') {
     e.preventDefault(); if (!e.repeat) onPress();
   } else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft' || e.code === 'Backspace') {
     e.preventDefault();
