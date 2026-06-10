@@ -1755,16 +1755,16 @@ window.addEventListener('keydown', e => {
     if (copySelectedChord()) e.preventDefault();
   } else if ((e.ctrlKey || e.metaKey) && key === 'v') {
     if (pasteChordBox()) e.preventDefault();
-  } else if ((e.code === 'Space' || e.code === 'ArrowDown') && !e.repeat) {
-    e.preventDefault(); onPress();
-  } else if ((e.code === 'ArrowRight' || key === 'f') && !e.repeat) {
-    e.preventDefault(); goForward();
-  } else if ((e.code === 'ArrowLeft' || e.code === 'Backspace' || key === 'd') && !e.repeat) {
-    e.preventDefault(); goBack();
-  }
+  } else if (e.code === 'Space' || e.code === 'ArrowDown') {
+    e.preventDefault(); if (!e.repeat) onPress();
+  } else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft' || e.code === 'Backspace') {
+    e.preventDefault();
+    if (!e.repeat) { e.code === 'ArrowRight' ? goForward() : goBack(); }
+  } else if (key === 'f' && !e.repeat) { e.preventDefault(); goForward(); }
+  else if (key === 'd' && !e.repeat) { e.preventDefault(); goBack(); }
 });
 window.addEventListener('keyup', e => {
-  if (e.code === 'Space') { e.preventDefault(); onRelease(); }
+  if (e.code === 'Space' || e.code === 'ArrowDown') { e.preventDefault(); onRelease(); }
 });
 
 window.addEventListener('pointermove', e => {
