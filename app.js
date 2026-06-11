@@ -420,7 +420,7 @@ function playCamEndingArpeggio() {
   });
 
   const now = Tone.now() + 0.04;
-  const releaseAt = now + times[last] + 2.2; // 마지막 음 후 2.2초 유지 후 자연 페이드
+  const releaseAt = now + times[last] + 3.0; // 마지막 음 후 3초 유지 후 자연 페이드
 
   const getVel = (i, name) => {
     if (i === 0)    return Math.min(1,   0.85 * bassLoudComp(name));
@@ -433,13 +433,17 @@ function playCamEndingArpeggio() {
     const sampler = currentSound === 'ep1' ? ep1Poly : ep2Poly;
     sampler.releaseAll(Tone.now());
     allNames.forEach((n, i) => sampler.triggerAttack(n, now + times[i], getVel(i, n)));
+    sampler.release = 4.5;
     sampler.releaseAll(releaseAt);
+    setTimeout(() => { sampler.release = 1.5; }, (releaseAt - Tone.now() + 5) * 1000);
   } else if (currentSound === 'balladpiano') {
     ensureBalladSynth();
     if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
     lastBalladNotes = allNames;
     allNames.forEach((n, i) => balladPoly.triggerAttack(n, now + times[i], getVel(i, n)));
+    balladPoly.release = 7.0;
     balladPoly.releaseAll(releaseAt);
+    setTimeout(() => { balladPoly.release = 5.0; }, (releaseAt - Tone.now() + 8) * 1000);
   } else {
     playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
   }
