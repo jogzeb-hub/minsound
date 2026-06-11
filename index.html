@@ -2918,7 +2918,7 @@ function updateCamDisplay() {
 document.getElementById('camBtn').addEventListener('click', async () => {
   try {
     _camStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
+      video: { facingMode: 'user', width: { ideal: 99999 }, height: { ideal: 99999 } },
       audio: false
     });
     document.getElementById('camVideo').srcObject = _camStream;
