@@ -512,9 +512,6 @@ E C#m A B
         <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" id="grainTurbulence" seed="0"/>
         <feColorMatrix type="saturate" values="0"/>
       </filter>
-      <filter id="iso-r"><feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>
-      <filter id="iso-g"><feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>
-      <filter id="iso-b"><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"/></filter>
     </defs>
   </svg>
 
@@ -526,9 +523,6 @@ E C#m A B
     <div class="cam-vignette" id="camVignette"></div>
     <div class="cam-rgb-wrap hidden" id="camRgbWrap">
       <canvas class="cam-rgb-layer" id="camVideoCanvas"></canvas>
-      <canvas class="cam-rgb-layer cam-rgb-r" id="camTrailR" style="transform:translateX(7px)"></canvas>
-      <canvas class="cam-rgb-layer cam-rgb-g" id="camTrailG"></canvas>
-      <canvas class="cam-rgb-layer cam-rgb-b" id="camTrailB" style="transform:translateX(-7px)"></canvas>
     </div>
     <div class="cam-grad-top"></div>
     <div class="cam-grad-bot"></div>

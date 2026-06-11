@@ -2061,8 +2061,9 @@ let videoArtColor = 'rainbow'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
 let videoArtDecay = 0.014;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 1 대응)
 let videoArtAmpPasses = 1;  // screen 증폭 횟수
-let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
-let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null;
+let _vidCtx = null, _trailCtx = null;
+let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null, _trailCanvas = null, _colorTmpCanvas = null;
+let _colorTmpCtx = null;
 let _tmpCtx = null, _prevCtx = null, _diffCtx = null;
 
 function animateGrain() {
@@ -2085,22 +2086,18 @@ function initVideoArtCanvases() {
   const H = video.videoHeight && video.videoWidth
     ? Math.round(W * video.videoHeight / video.videoWidth) : 270;
 
-  ['camVideoCanvas','camTrailR','camTrailG','camTrailB'].forEach(id => {
-    const c = document.getElementById(id);
-    if (c) { c.width = W; c.height = H; }
-  });
-  _vidCtx = document.getElementById('camVideoCanvas').getContext('2d');
-  _rCtx   = document.getElementById('camTrailR').getContext('2d');
-  _gCtx   = document.getElementById('camTrailG').getContext('2d');
-  _bCtx   = document.getElementById('camTrailB').getContext('2d');
+  const vidCanvas = document.getElementById('camVideoCanvas');
+  vidCanvas.width = W; vidCanvas.height = H;
+  _vidCtx = vidCanvas.getContext('2d');
 
-  // Off-DOM 작업 캔버스
-  _tmpCanvas  = Object.assign(document.createElement('canvas'), {width:W, height:H});
-  _prevCanvas = Object.assign(document.createElement('canvas'), {width:W, height:H});
-  _diffCanvas = Object.assign(document.createElement('canvas'), {width:W, height:H});
+  const mk = () => Object.assign(document.createElement('canvas'), {width:W, height:H});
+  _tmpCanvas = mk(); _prevCanvas = mk(); _diffCanvas = mk();
+  _trailCanvas = mk(); _colorTmpCanvas = mk();
   _tmpCtx  = _tmpCanvas.getContext('2d');
   _prevCtx = _prevCanvas.getContext('2d');
   _diffCtx = _diffCanvas.getContext('2d');
+  _trailCtx = _trailCanvas.getContext('2d');
+  _colorTmpCtx = _colorTmpCanvas.getContext('2d');
 
   document.getElementById('camRgbWrap').classList.remove('hidden');
 }
@@ -2148,44 +2145,46 @@ function renderVideoArtFrame(ts) {
   _prevCtx.clearRect(0, 0, W, H);
   _prevCtx.drawImage(_tmpCanvas, 0, 0);
 
-  // 5. 잔상 캔버스 decay
-  const _isRainbow = videoArtColor === 'rainbow';
-  const _activeTrails = videoArtColor === 'r' ? [_rCtx]
-                      : videoArtColor === 'g' ? [_gCtx]
-                      : videoArtColor === 'b' ? [_bCtx]
-                      : [_rCtx, _gCtx, _bCtx]; // white, rainbow 모두 전체 decay
-  [_rCtx, _gCtx, _bCtx].forEach(ctx => {
-    if (_activeTrails.includes(ctx)) {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.globalAlpha = videoArtDecay;
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = 'source-over';
-    } else {
-      ctx.clearRect(0, 0, W, H);
-    }
-  });
+  // 5. 잔상 감쇠
+  _trailCtx.globalCompositeOperation = 'destination-out';
+  _trailCtx.globalAlpha = videoArtDecay;
+  _trailCtx.fillRect(0, 0, W, H);
+  _trailCtx.globalAlpha = 1;
+  _trailCtx.globalCompositeOperation = 'source-over';
 
-  // 6. 차분을 활성 잔상 캔버스에 추가 (screen blend)
-  if (_isRainbow) {
-    // 30프레임마다 R→G→B 순환
+  // 6. diff 색상화 후 잔상에 screen 합성 (SVG 필터 대신 multiply 블렌드)
+  const COLOR_MAP = { r:['#ff0000',shift], g:['#00ff00',0], b:['#0000ff',-shift] };
+  const addColoredDiff = (fillColor, dx) => {
+    _colorTmpCtx.clearRect(0, 0, W, H);
+    _colorTmpCtx.drawImage(_diffCanvas, 0, 0);
+    _colorTmpCtx.globalCompositeOperation = 'multiply';
+    _colorTmpCtx.fillStyle = fillColor;
+    _colorTmpCtx.fillRect(0, 0, W, H);
+    _colorTmpCtx.globalCompositeOperation = 'source-over';
+    _trailCtx.globalCompositeOperation = 'screen';
+    _trailCtx.drawImage(_colorTmpCanvas, dx, 0);
+    _trailCtx.globalCompositeOperation = 'source-over';
+  };
+
+  if (videoArtColor === 'white') {
+    // 흰색: R/G/B 각 채널 shift 적용해 합성
+    Object.values(COLOR_MAP).forEach(([c, dx]) => addColoredDiff(c, dx));
+  } else if (videoArtColor === 'rainbow') {
     _rainbowFrameCount++;
     if (_rainbowFrameCount >= 30) { _rainbowFrameCount = 0; _rainbowIdx = (_rainbowIdx + 1) % 3; }
-    const _rainbowCtx = [_rCtx, _gCtx, _bCtx][_rainbowIdx];
-    _rainbowCtx.globalCompositeOperation = 'screen';
-    _rainbowCtx.drawImage(_diffCanvas, 0, 0);
-    _rainbowCtx.globalCompositeOperation = 'source-over';
+    const [c, dx] = [COLOR_MAP.r, COLOR_MAP.g, COLOR_MAP.b][_rainbowIdx];
+    addColoredDiff(c, dx);
   } else {
-    _activeTrails.forEach(ctx => {
-      ctx.globalCompositeOperation = 'screen';
-      ctx.drawImage(_diffCanvas, 0, 0);
-      ctx.globalCompositeOperation = 'source-over';
-    });
+    const [c, dx] = COLOR_MAP[videoArtColor] || ['#ffffff', 0];
+    addColoredDiff(c, dx);
   }
 
-  // 7. 현재 프레임 → 비디오 캔버스
+  // 7. 현재 프레임 + 잔상 → 출력 캔버스
   _vidCtx.clearRect(0, 0, W, H);
   _vidCtx.drawImage(_tmpCanvas, 0, 0);
+  _vidCtx.globalCompositeOperation = 'screen';
+  _vidCtx.drawImage(_trailCanvas, 0, 0);
+  _vidCtx.globalCompositeOperation = 'source-over';
 
   videoArtFrame = requestAnimationFrame(renderVideoArtFrame);
 }
@@ -2193,11 +2192,12 @@ function renderVideoArtFrame(ts) {
 function stopVideoArt() {
   if (videoArtFrame) { cancelAnimationFrame(videoArtFrame); videoArtFrame = null; }
   document.getElementById('camRgbWrap').classList.add('hidden');
-  [_rCtx, _gCtx, _bCtx, _vidCtx].forEach(ctx => {
+  [_vidCtx, _trailCtx].forEach(ctx => {
     if (ctx) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   });
-  _rCtx = _gCtx = _bCtx = _vidCtx = null;
+  _vidCtx = _trailCtx = _colorTmpCtx = null;
   _tmpCtx = _prevCtx = _diffCtx = null;
+  _trailCanvas = _colorTmpCanvas = null;
   _tmpCanvas = _prevCanvas = _diffCanvas = null;
 }
 
