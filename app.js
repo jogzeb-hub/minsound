@@ -2075,9 +2075,13 @@ function stopGrain() {
   if (grainFrame) { cancelAnimationFrame(grainFrame); grainFrame = null; }
 }
 
+const _isMobile = navigator.maxTouchPoints > 1;
+let _lastVAFrameTs = 0;
+
 function initVideoArtCanvases() {
   const video = document.getElementById('camVideo');
-  const W = Math.min(video.videoWidth || 640, 480);
+  const maxW = _isMobile ? 320 : 480;
+  const W = Math.min(video.videoWidth || 640, maxW);
   const H = video.videoHeight && video.videoWidth
     ? Math.round(W * video.videoHeight / video.videoWidth) : 270;
 
@@ -2101,7 +2105,11 @@ function initVideoArtCanvases() {
   document.getElementById('camRgbWrap').classList.remove('hidden');
 }
 
-function renderVideoArtFrame() {
+function renderVideoArtFrame(ts) {
+  if (_isMobile && ts - _lastVAFrameTs < 33) {
+    videoArtFrame = requestAnimationFrame(renderVideoArtFrame); return;
+  }
+  _lastVAFrameTs = ts;
   const video = document.getElementById('camVideo');
   if (!_vidCtx || !_tmpCtx || video.readyState < 2) {
     videoArtFrame = requestAnimationFrame(renderVideoArtFrame); return;
