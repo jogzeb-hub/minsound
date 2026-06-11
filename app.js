@@ -1527,7 +1527,7 @@ window.addEventListener('keydown', e => {
     if (key === 'c') { if (copySelectedChord()) e.preventDefault(); return; }
     if (key === 'v') { if (pasteChordBox()) e.preventDefault(); return; }
   }
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if ((e.target.tagName === 'INPUT' && e.target.type !== 'range') || e.target.tagName === 'TEXTAREA') return;
 
   // Shift+A~G: 현재 코드 근음 변경
   const rootMap = { a:'A', b:'B', c:'C', d:'D', e:'E', f:'F', g:'G' };
