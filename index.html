@@ -424,7 +424,7 @@
       display: flex; align-items: center; justify-content: center; gap: 10px;
     }
     .cam-lyrics-prev, .cam-lyrics-next {
-      color: rgba(255,255,255,0.40); font-size: 0.9rem; font-weight: 500;
+      color: rgba(255,255,255,0.40); font-size: 1.15rem; font-weight: 500; font-style: italic;
       text-shadow: 0 2px 8px rgba(0,0,0,0.7);
       flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       line-height: 1.4;
@@ -856,10 +856,6 @@
     /* ── 마디선 ── */
     .chord-card.bar-start { border-left: 2px solid rgba(255,255,255,0.22); }
 
-    /* ── 카메라 배경 테마 ── */
-    .cam-theme-row { position:absolute; bottom:52px; left:16px; z-index:4; display:flex; gap:6px; }
-    .cam-theme-btn { background:rgba(0,0,0,0.4); border:1.5px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:1rem; }
-    .cam-theme-btn.active { border-color:#fff; }
 
     /* ── 카메라 피아노 다이어그램 ── */
     .cam-piano-wrap { position:absolute; bottom:130px; left:50%; transform:translateX(-50%); z-index:3; opacity:0.88; pointer-events:none; }
@@ -902,9 +898,8 @@
     /* 비디오 CSS 필터 클래스 */
     .cam-flt-film90    { filter:sepia(0.2) contrast(1.1) saturate(0.78) brightness(0.94) !important; }
     .cam-flt-bw        { filter:grayscale(1) contrast(1.22) brightness(0.90) !important; }
-    .cam-flt-nostalgia { filter:sepia(0.52) contrast(1.08) brightness(0.82) saturate(0.65) !important; }
-    .cam-flt-cinema    { filter:contrast(1.32) saturate(0.60) brightness(0.88) hue-rotate(-8deg) !important; }
-    .cam-flt-lomo      { filter:contrast(1.42) saturate(1.38) brightness(0.82) !important; }
+    .cam-pixel-wrap { position:absolute; inset:0; z-index:1; pointer-events:none; }
+    #camPixelCanvas { width:100%; height:100%; image-rendering:pixelated; image-rendering:crisp-edges; }
   </style>
 </head>
 <body>
@@ -1426,6 +1421,9 @@ E C#m A B
     <!-- 필터 오버레이 (grain, vignette, rgb 잔상) -->
     <div class="cam-filter-overlay" id="camFilterOverlay"></div>
     <div class="cam-vignette" id="camVignette"></div>
+    <div class="cam-pixel-wrap hidden" id="camPixelWrap">
+      <canvas id="camPixelCanvas"></canvas>
+    </div>
     <div class="cam-rgb-wrap hidden" id="camRgbWrap">
       <canvas class="cam-rgb-layer" id="camVideoCanvas"></canvas>
       <canvas class="cam-rgb-layer cam-rgb-r" id="camTrailR" style="transform:translateX(7px)"></canvas>
@@ -1455,16 +1453,8 @@ E C#m A B
       <button class="cam-filter-btn active" data-filter="none">없음</button>
       <button class="cam-filter-btn" data-filter="film90">📽 필름</button>
       <button class="cam-filter-btn" data-filter="bw">흑백</button>
-      <button class="cam-filter-btn" data-filter="nostalgia">노스탤지어</button>
-      <button class="cam-filter-btn" data-filter="cinema">시네마</button>
-      <button class="cam-filter-btn" data-filter="lomo">로모</button>
+      <button class="cam-filter-btn" data-filter="pixel">🕹 픽셀</button>
       <button class="cam-filter-btn" data-filter="videoart">📼 비디오아트</button>
-    </div>
-    <div class="cam-theme-row" id="camThemeRow">
-      <button class="cam-theme-btn active" data-theme="black">⬛</button>
-      <button class="cam-theme-btn" data-theme="white">⬜</button>
-      <button class="cam-theme-btn" data-theme="dark">🟦</button>
-      <button class="cam-theme-btn" data-theme="green">🟩</button>
     </div>
     <div class="cam-controls">
       <button class="cam-exit-btn" id="camResetBtn">⏮ 처음</button>
@@ -1575,9 +1565,6 @@ let tapTimes = [];
 let countInEnabled = false;
 let countSynth = null;
 
-// ── 카메라 배경 테마 ──
-let camBgTheme = 'black';
-const CAM_THEMES = { black:'#000', white:'#fff', dark:'#0a1a2e', green:'#00b140' };
 
 // ── 카메라 피아노 ──
 let camPianoOn = false;
@@ -3238,15 +3225,6 @@ document.getElementById('saveNameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('saveNewBtn').click();
 });
 
-// ── 카메라 배경 테마 ──
-function applyCamTheme(theme) {
-  camBgTheme = theme;
-  const overlay = document.getElementById('camOverlay');
-  if (overlay) overlay.style.background = CAM_THEMES[theme] || '#000';
-  document.querySelectorAll('.cam-theme-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.theme === theme);
-  });
-}
 
 // ── 카메라 피아노 다이어그램 ──
 function buildPianoSVG(pitchClasses) {
@@ -3465,21 +3443,14 @@ document.getElementById('countInBtn').addEventListener('click', () => {
   document.getElementById('countInBtn').classList.toggle('active', countInEnabled);
 });
 
-// ── 카메라 배경 테마 ──
-document.getElementById('camThemeRow').addEventListener('click', e => {
-  const btn = e.target.closest('.cam-theme-btn');
-  if (btn) applyCamTheme(btn.dataset.theme);
-});
 
 // ── 카메라 필터 ──
 const CAM_FILTER_DEFS = {
-  none:      { cls: '',                  grain: 0,    vig: 0    },
-  film90:    { cls: 'cam-flt-film90',    grain: 0.13, vig: 0.48 },
-  bw:        { cls: 'cam-flt-bw',        grain: 0.11, vig: 0.38 },
-  nostalgia: { cls: 'cam-flt-nostalgia', grain: 0.18, vig: 0.62 },
-  cinema:    { cls: 'cam-flt-cinema',    grain: 0,    vig: 0.70 },
-  lomo:      { cls: 'cam-flt-lomo',      grain: 0,    vig: 0.80 },
-  videoart:  { cls: '',                  grain: 0,    vig: 0    },
+  none:     { cls: '',               grain: 0,    vig: 0    },
+  film90:   { cls: 'cam-flt-film90', grain: 0.13, vig: 0.48 },
+  bw:       { cls: 'cam-flt-bw',     grain: 0.11, vig: 0.38 },
+  pixel:    { cls: '',               grain: 0,    vig: 0    },
+  videoart: { cls: '',               grain: 0,    vig: 0    },
 };
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
@@ -3593,6 +3564,41 @@ function stopVideoArt() {
   _tmpCanvas = _prevCanvas = _diffCanvas = null;
 }
 
+let _pixelFrame = null;
+let _pixelCtx = null;
+
+function initPixelCanvas() {
+  const video = document.getElementById('camVideo');
+  const canvas = document.getElementById('camPixelCanvas');
+  const W = video.videoWidth || 480;
+  const H = video.videoHeight || 270;
+  const BLOCK = 10;
+  canvas.width = Math.round(W / BLOCK);
+  canvas.height = Math.round(H / BLOCK);
+  _pixelCtx = canvas.getContext('2d');
+  _pixelCtx.imageSmoothingEnabled = false;
+  document.getElementById('camPixelWrap').classList.remove('hidden');
+}
+
+function renderPixelFrame() {
+  const video = document.getElementById('camVideo');
+  if (!_pixelCtx || video.readyState < 2) {
+    _pixelFrame = requestAnimationFrame(renderPixelFrame); return;
+  }
+  const W = _pixelCtx.canvas.width, H = _pixelCtx.canvas.height;
+  _pixelCtx.save();
+  _pixelCtx.scale(-1, 1);
+  _pixelCtx.drawImage(video, -W, 0, W, H);
+  _pixelCtx.restore();
+  _pixelFrame = requestAnimationFrame(renderPixelFrame);
+}
+
+function stopPixel() {
+  if (_pixelFrame) { cancelAnimationFrame(_pixelFrame); _pixelFrame = null; }
+  document.getElementById('camPixelWrap').classList.add('hidden');
+  if (_pixelCtx) { _pixelCtx.clearRect(0, 0, _pixelCtx.canvas.width, _pixelCtx.canvas.height); _pixelCtx = null; }
+}
+
 function applyCamFilter(name) {
   currentCamFilter = name;
   const cfg = CAM_FILTER_DEFS[name] || CAM_FILTER_DEFS.none;
@@ -3600,15 +3606,16 @@ function applyCamFilter(name) {
   const overlay = document.getElementById('camFilterOverlay');
   const vignette = document.getElementById('camVignette');
 
-  // 기존 비디오아트 정리
+  // 기존 효과 정리
   if (name !== 'videoart') stopVideoArt();
+  if (name !== 'pixel') stopPixel();
 
   // CSS 필터 클래스 교체
   Object.values(CAM_FILTER_DEFS).forEach(f => { if (f.cls) video.classList.remove(f.cls); });
   if (cfg.cls) video.classList.add(cfg.cls);
 
-  // 비디오아트: video 숨기고 canvas로 대체
-  video.style.opacity = (name === 'videoart') ? '0' : '';
+  // canvas 효과: video 숨기고 canvas로 대체
+  video.style.opacity = (name === 'videoart' || name === 'pixel') ? '0' : '';
 
   // Grain
   overlay.style.opacity = cfg.grain || 0;
@@ -3622,6 +3629,12 @@ function applyCamFilter(name) {
   if (name === 'videoart') {
     if (video.readyState >= 2) { initVideoArtCanvases(); renderVideoArtFrame(); }
     else video.addEventListener('playing', () => { initVideoArtCanvases(); renderVideoArtFrame(); }, { once: true });
+  }
+
+  // 픽셀 시작
+  if (name === 'pixel') {
+    if (video.readyState >= 2) { initPixelCanvas(); renderPixelFrame(); }
+    else video.addEventListener('playing', () => { initPixelCanvas(); renderPixelFrame(); }, { once: true });
   }
 
   // 버튼 상태
