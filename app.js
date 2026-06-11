@@ -2038,7 +2038,7 @@ let videoArtFrame = null;
 let videoArtColor = 'white'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
 let videoArtDecay = 0.0056;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
-let videoArtAmpPasses = 3;  // screen 증폭 횟수
+let videoArtAmpPasses = 6;  // screen 증폭 횟수
 let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
 let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null;
 let _tmpCtx = null, _prevCtx = null, _diffCtx = null;
