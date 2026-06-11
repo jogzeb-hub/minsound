@@ -2036,6 +2036,7 @@ const CAM_FILTER_DEFS = {
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let videoArtFrame = null;
+let videoArtColor = 'white'; // 'white' | 'r' | 'g' | 'b'
 let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
 let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null;
 let _tmpCtx = null, _prevCtx = null, _diffCtx = null;
@@ -2107,25 +2108,29 @@ function renderVideoArtFrame() {
   _prevCtx.clearRect(0, 0, W, H);
   _prevCtx.drawImage(_tmpCanvas, 0, 0);
 
-  // 5. 잔상 캔버스 decay
+  // 5. 잔상 캔버스 decay (선택된 색상 캔버스만 유지, 나머지 클리어)
+  const _activeTrails = videoArtColor === 'r' ? [_rCtx]
+                      : videoArtColor === 'g' ? [_gCtx]
+                      : videoArtColor === 'b' ? [_bCtx]
+                      : [_rCtx, _gCtx, _bCtx];
   [_rCtx, _gCtx, _bCtx].forEach(ctx => {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.globalAlpha = 0.15;
-    ctx.fillRect(0, 0, W, H);
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
+    if (_activeTrails.includes(ctx)) {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.globalAlpha = 0.15;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    } else {
+      ctx.clearRect(0, 0, W, H);
+    }
   });
 
-  // 6. 차분을 R/G/B 잔상 캔버스에 추가 (screen blend)
-  // R: 오른쪽 shift (CSS transform translateX(7px)로 처리)
-  // B: 왼쪽 shift (CSS transform translateX(-7px)로 처리)
-  _rCtx.globalCompositeOperation = 'screen';
-  _rCtx.drawImage(_diffCanvas, 0, 0);
-  _gCtx.globalCompositeOperation = 'screen';
-  _gCtx.drawImage(_diffCanvas, 0, 0);
-  _bCtx.globalCompositeOperation = 'screen';
-  _bCtx.drawImage(_diffCanvas, 0, 0);
-  [_rCtx, _gCtx, _bCtx].forEach(c => { c.globalCompositeOperation = 'source-over'; });
+  // 6. 차분을 활성 잔상 캔버스에 추가 (screen blend)
+  _activeTrails.forEach(ctx => {
+    ctx.globalCompositeOperation = 'screen';
+    ctx.drawImage(_diffCanvas, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+  });
 
   // 7. 현재 프레임 → 비디오 캔버스
   _vidCtx.clearRect(0, 0, W, H);
@@ -2222,11 +2227,23 @@ function applyCamFilter(name) {
   document.querySelectorAll('.cam-filter-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.filter === name);
   });
+
+  // 비디오아트 색상 행 show/hide
+  document.getElementById('camVideoArtColorRow').classList.toggle('hidden', name !== 'videoart');
 }
 
 document.getElementById('camFilterRow').addEventListener('click', e => {
   const btn = e.target.closest('.cam-filter-btn');
   if (btn) applyCamFilter(btn.dataset.filter);
+});
+
+document.getElementById('camVideoArtColorRow').addEventListener('click', e => {
+  const btn = e.target.closest('.cam-vacolor-btn');
+  if (!btn) return;
+  videoArtColor = btn.dataset.color;
+  document.querySelectorAll('.cam-vacolor-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.color === videoArtColor);
+  });
 });
 
 // ── JSON 내보내기 ──

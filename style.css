@@ -897,6 +897,24 @@
       white-space:nowrap; flex-shrink:0; transition:all 0.15s;
     }
     .cam-filter-btn.active { background:rgba(255,255,255,0.22); border-color:#fff; color:#fff; }
+    .cam-vacolor-row {
+      position:absolute; top:80px; left:0; right:0; z-index:5;
+      display:flex; gap:5px; justify-content:center; padding:0 10px;
+    }
+    .cam-vacolor-row.hidden { display:none; }
+    .cam-vacolor-btn {
+      background:rgba(0,0,0,0.52); border:1.5px solid rgba(255,255,255,0.22);
+      border-radius:20px; color:rgba(255,255,255,0.72);
+      padding:5px 14px; font-size:0.75rem; cursor:pointer;
+      white-space:nowrap; flex-shrink:0; transition:all 0.15s;
+    }
+    .cam-vacolor-btn[data-color="r"] { border-color:rgba(255,80,80,0.5); color:rgba(255,120,120,0.9); }
+    .cam-vacolor-btn[data-color="g"] { border-color:rgba(80,255,80,0.5); color:rgba(100,255,100,0.9); }
+    .cam-vacolor-btn[data-color="b"] { border-color:rgba(80,140,255,0.5); color:rgba(100,160,255,0.9); }
+    .cam-vacolor-btn.active { background:rgba(255,255,255,0.22); border-color:#fff; color:#fff; }
+    .cam-vacolor-btn[data-color="r"].active { background:rgba(255,60,60,0.35); border-color:#ff5555; color:#ff8888; }
+    .cam-vacolor-btn[data-color="g"].active { background:rgba(60,255,60,0.25); border-color:#55ff55; color:#88ff88; }
+    .cam-vacolor-btn[data-color="b"].active { background:rgba(60,120,255,0.35); border-color:#5599ff; color:#88bbff; }
     .cam-filter-overlay {
       position:absolute; inset:0; z-index:1; pointer-events:none;
       opacity:0; mix-blend-mode:overlay;
