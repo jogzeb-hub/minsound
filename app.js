@@ -2037,6 +2037,8 @@ let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let videoArtFrame = null;
 let videoArtColor = 'white'; // 'white' | 'r' | 'g' | 'b'
+let videoArtDecay = 0.06;   // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
+let videoArtAmpPasses = 3;  // screen 증폭 횟수
 let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
 let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null;
 let _tmpCtx = null, _prevCtx = null, _diffCtx = null;
@@ -2100,9 +2102,7 @@ function renderVideoArtFrame() {
 
   // 3. 차분 증폭 (screen 2회 → 쨍한 색)
   _diffCtx.globalCompositeOperation = 'screen';
-  _diffCtx.drawImage(_diffCanvas, 0, 0);
-  _diffCtx.drawImage(_diffCanvas, 0, 0);
-  _diffCtx.drawImage(_diffCanvas, 0, 0);
+  for (let _p = 0; _p < videoArtAmpPasses; _p++) _diffCtx.drawImage(_diffCanvas, 0, 0);
   _diffCtx.globalCompositeOperation = 'source-over';
 
   // 4. prev 갱신
@@ -2117,7 +2117,7 @@ function renderVideoArtFrame() {
   [_rCtx, _gCtx, _bCtx].forEach(ctx => {
     if (_activeTrails.includes(ctx)) {
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.globalAlpha = 0.04;
+      ctx.globalAlpha = videoArtDecay;
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
@@ -2230,9 +2230,10 @@ function applyCamFilter(name) {
     b.classList.toggle('active', b.dataset.filter === name);
   });
 
-  // 픽셀 농도 행 / 비디오아트 색상 행 show/hide
+  // 픽셀 농도 행 / 비디오아트 색상·슬라이더 행 show/hide
   document.getElementById('camPixelDensityRow').classList.toggle('hidden', name !== 'pixel');
   document.getElementById('camVideoArtColorRow').classList.toggle('hidden', name !== 'videoart');
+  document.getElementById('camVideoArtSlidersRow').classList.toggle('hidden', name !== 'videoart');
 }
 
 document.getElementById('camFilterRow').addEventListener('click', e => {
@@ -2248,6 +2249,15 @@ document.getElementById('camPixelDensitySlider').addEventListener('input', e => 
     initPixelCanvas();
     renderPixelFrame();
   }
+});
+
+document.getElementById('camVaDecaySlider').addEventListener('input', e => {
+  // slider 1(빠름)~10(느림) → decay 0.15~0.01
+  videoArtDecay = (11 - parseInt(e.target.value)) * 0.015;
+});
+
+document.getElementById('camVaIntensitySlider').addEventListener('input', e => {
+  videoArtAmpPasses = parseInt(e.target.value);
 });
 
 document.getElementById('camVideoArtColorRow').addEventListener('click', e => {
