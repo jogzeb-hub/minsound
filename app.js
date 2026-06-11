@@ -396,37 +396,47 @@ function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
   }
 }
 
-// ── 카메라 엔딩 아르페지오 ──
+// ── 카메라 엔딩 롤 (베이스→코드→캡 빠른 롤 + 리타르단도) ──
 function playCamEndingArpeggio() {
   if (!audioReady) return;
   const c = currentIdx >= 0 && currentIdx < chords.length ? chords[currentIdx] : null;
   if (!c) return;
 
   const midiNotes = getChordMidi(c.root, c.acc, c.oct, c.quality, c.inv);
-  const bassName = midiToNoteName(Math.max(12, midiNotes[0] - 12));
-  const upperNames = midiNotes.map(midiToNoteName);
-  const allNames = [bassName, ...upperNames];
+  // 베이스(근음 옥타브 아래) → 코드음 → 캡(최고음 옥타브 위) 로 착지감 부여
+  const bassMidi = Math.max(12, midiNotes[0] - 12);
+  const capMidi  = midiNotes[midiNotes.length - 1] + 12;
+  const allMidi  = [bassMidi, ...midiNotes, capMidi];
+  const allNames = allMidi.map(midiToNoteName);
+  const last = allNames.length - 1;
 
-  const step = 0.10;
-  const dur = 2.2;
+  // 누적 타이밍: 기본 0.06s, 마지막 두 음은 0.10s (리타르단도)
+  const times = [];
+  let t = 0;
+  allNames.forEach((_, i) => {
+    times.push(t);
+    t += i >= last - 1 ? 0.10 : 0.06;
+  });
+
+  const dur = 3.5;
   const now = Tone.now() + 0.04;
+
+  const getVel = (i, name) => {
+    if (i === 0)    return Math.min(1,   0.85 * bassLoudComp(name)); // 베이스
+    if (i === last) return 0.82;                                      // 캡: 살짝 강조
+    return 0.68;
+  };
 
   if (currentSound === 'ep1' || currentSound === 'ep2') {
     ensureEPSynth(currentSound);
     const sampler = currentSound === 'ep1' ? ep1Poly : ep2Poly;
     sampler.releaseAll(Tone.now());
-    allNames.forEach((n, i) => {
-      const vel = Math.min(1, i === 0 ? 0.92 * bassLoudComp(n) : 0.80);
-      sampler.triggerAttackRelease(n, dur, now + i * step, vel);
-    });
+    allNames.forEach((n, i) => sampler.triggerAttackRelease(n, dur, now + times[i], getVel(i, n)));
   } else if (currentSound === 'balladpiano') {
     ensureBalladSynth();
     if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
     lastBalladNotes = allNames;
-    allNames.forEach((n, i) => {
-      const vel = Math.min(1.1, i === 0 ? 0.72 * bassLoudComp(n) : 0.66);
-      balladPoly.triggerAttackRelease(n, dur * 1.1, now + i * step, vel);
-    });
+    allNames.forEach((n, i) => balladPoly.triggerAttackRelease(n, dur, now + times[i], getVel(i, n)));
   } else {
     playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
   }
