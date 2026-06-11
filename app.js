@@ -2238,6 +2238,11 @@ document.getElementById('camVaIntensitySlider').addEventListener('input', e => {
   videoArtAmpPasses = parseInt(e.target.value);
 });
 
+// 슬라이더 포커스 중 키입력이 슬라이더를 움직이지 않도록
+document.querySelectorAll('input[type="range"]').forEach(slider => {
+  slider.addEventListener('keydown', e => { e.preventDefault(); });
+});
+
 document.getElementById('camVideoArtColorRow').addEventListener('click', e => {
   const btn = e.target.closest('.cam-vacolor-btn');
   if (!btn) return;
