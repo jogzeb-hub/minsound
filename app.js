@@ -396,6 +396,38 @@ function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
   }
 }
 
+// ── 카메라 엔딩 아르페지오 ──
+let _endingPoly = null;
+function ensureEndingSynth() {
+  if (_endingPoly) return;
+  const rv = new Tone.Reverb({ decay: 5, wet: 0.55 }); rv.toDestination();
+  const lim = new Tone.Limiter(-3); lim.connect(rv);
+  _endingPoly = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 0.025, decay: 0.4, sustain: 0.55, release: 4.5 },
+  });
+  _endingPoly.connect(lim);
+}
+
+function playCamEndingArpeggio() {
+  if (!audioReady) return;
+  const idx = currentIdx >= 0 && currentIdx < chords.length ? currentIdx : -1;
+  const c = idx >= 0 ? chords[idx] : null;
+  if (!c) return;
+  ensureEndingSynth();
+  stopSound();
+  const midiNotes = getChordMidi(c.root, c.acc, c.oct, c.quality, c.inv);
+  const bassNote = midiNotes[0] - 12;
+  const allNotes = [bassNote, ...midiNotes].sort((a, b) => a - b);
+  const noteNames = allNotes.map(midiToNoteName);
+  const step = 0.13;
+  const dur = 4.5;
+  const now = Tone.now() + 0.04;
+  noteNames.forEach((n, i) => {
+    _endingPoly.triggerAttackRelease(n, dur, now + i * step, i === 0 ? 0.72 : 0.55);
+  });
+}
+
 // ── 카운트인 신스 ──
 function ensureCountSynth() {
   if (countSynth) return;
@@ -1525,6 +1557,9 @@ window.addEventListener('keydown', e => {
 
   if (e.code === 'Space' || e.code === 'ArrowDown') {
     e.preventDefault(); if (!e.repeat) onPress();
+  } else if (e.code === 'End' && !e.repeat) {
+    const isCamOpen = !document.getElementById('camOverlay').classList.contains('hidden');
+    if (isCamOpen) { e.preventDefault(); ensureAudio().then(() => playCamEndingArpeggio()); }
   } else if (e.code === 'Delete') {
     e.preventDefault(); if (!e.repeat) deleteSelected();
   } else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft' || e.code === 'Backspace') {
