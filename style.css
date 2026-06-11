@@ -910,7 +910,7 @@
     }
     .cam-rgb-wrap { position:absolute; inset:0; z-index:1; pointer-events:none; }
     .cam-rgb-wrap.hidden { display:none; }
-    .cam-rgb-layer { position:absolute; inset:0; width:100%; height:100%; mix-blend-mode:screen; }
+    .cam-rgb-layer { position:absolute; inset:0; width:100%; height:100%; mix-blend-mode:screen; object-fit:cover; }
     .cam-rgb-r { filter:url(#iso-r); }
     .cam-rgb-g { filter:url(#iso-g); }
     .cam-rgb-b { filter:url(#iso-b); }
@@ -918,4 +918,4 @@
     .cam-flt-film90    { filter:sepia(0.2) contrast(1.1) saturate(0.78) brightness(0.94) !important; }
     .cam-flt-bw        { filter:grayscale(1) contrast(1.22) brightness(0.90) !important; }
     .cam-pixel-wrap { position:absolute; inset:0; z-index:1; pointer-events:none; }
-    #camPixelCanvas { width:100%; height:100%; image-rendering:pixelated; image-rendering:crisp-edges; }
+    #camPixelCanvas { width:100%; height:100%; image-rendering:pixelated; image-rendering:crisp-edges; object-fit:cover; }
