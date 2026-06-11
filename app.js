@@ -2036,7 +2036,8 @@ const CAM_FILTER_DEFS = {
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let videoArtFrame = null;
-let videoArtColor = 'white'; // 'white' | 'r' | 'g' | 'b'
+let videoArtColor = 'white'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
+let _rainbowIdx = 0, _rainbowFrameCount = 0;
 let videoArtDecay = 0.06;   // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
 let videoArtAmpPasses = 3;  // screen 증폭 횟수
 let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
@@ -2109,11 +2110,12 @@ function renderVideoArtFrame() {
   _prevCtx.clearRect(0, 0, W, H);
   _prevCtx.drawImage(_tmpCanvas, 0, 0);
 
-  // 5. 잔상 캔버스 decay (선택된 색상 캔버스만 유지, 나머지 클리어)
+  // 5. 잔상 캔버스 decay
+  const _isRainbow = videoArtColor === 'rainbow';
   const _activeTrails = videoArtColor === 'r' ? [_rCtx]
                       : videoArtColor === 'g' ? [_gCtx]
                       : videoArtColor === 'b' ? [_bCtx]
-                      : [_rCtx, _gCtx, _bCtx];
+                      : [_rCtx, _gCtx, _bCtx]; // white, rainbow 모두 전체 decay
   [_rCtx, _gCtx, _bCtx].forEach(ctx => {
     if (_activeTrails.includes(ctx)) {
       ctx.globalCompositeOperation = 'destination-out';
@@ -2127,11 +2129,21 @@ function renderVideoArtFrame() {
   });
 
   // 6. 차분을 활성 잔상 캔버스에 추가 (screen blend)
-  _activeTrails.forEach(ctx => {
-    ctx.globalCompositeOperation = 'screen';
-    ctx.drawImage(_diffCanvas, 0, 0);
-    ctx.globalCompositeOperation = 'source-over';
-  });
+  if (_isRainbow) {
+    // 30프레임마다 R→G→B 순환
+    _rainbowFrameCount++;
+    if (_rainbowFrameCount >= 30) { _rainbowFrameCount = 0; _rainbowIdx = (_rainbowIdx + 1) % 3; }
+    const _rainbowCtx = [_rCtx, _gCtx, _bCtx][_rainbowIdx];
+    _rainbowCtx.globalCompositeOperation = 'screen';
+    _rainbowCtx.drawImage(_diffCanvas, 0, 0);
+    _rainbowCtx.globalCompositeOperation = 'source-over';
+  } else {
+    _activeTrails.forEach(ctx => {
+      ctx.globalCompositeOperation = 'screen';
+      ctx.drawImage(_diffCanvas, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+    });
+  }
 
   // 7. 현재 프레임 → 비디오 캔버스
   _vidCtx.clearRect(0, 0, W, H);
@@ -2264,6 +2276,7 @@ document.getElementById('camVideoArtColorRow').addEventListener('click', e => {
   const btn = e.target.closest('.cam-vacolor-btn');
   if (!btn) return;
   videoArtColor = btn.dataset.color;
+  _rainbowIdx = 0; _rainbowFrameCount = 0;
   document.querySelectorAll('.cam-vacolor-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.color === videoArtColor);
   });
