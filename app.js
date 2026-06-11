@@ -920,6 +920,7 @@ function toggleLineBreakAtSelection() {
 function startDragWatch(e, idx, card) {
   if (e.button !== 0) return;
   if (e.shiftKey) return;
+  if (!document.getElementById('camOverlay').classList.contains('hidden')) return;
   if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.card-inv-wrap')) return;
   if (!isIdxSelected(idx)) selectChordIdx(idx);
   const range = getSelectionRange() || { start: idx, end: idx };

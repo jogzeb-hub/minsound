@@ -647,7 +647,8 @@
       position: fixed; inset: 0; z-index: 200;
       background: #000;
       display: flex; align-items: center; justify-content: center;
-      touch-action: manipulation;
+      touch-action: none;
+      user-select: none; -webkit-user-select: none;
     }
     .cam-overlay.hidden { display: none; }
 
@@ -656,6 +657,8 @@
       width: 100%; height: 100%;
       object-fit: cover;
       transform: scaleX(-1);
+      pointer-events: none;
+      -webkit-user-drag: none;
     }
     .cam-grad-top {
       position: absolute; top: 0; left: 0; right: 0; height: 110px;
