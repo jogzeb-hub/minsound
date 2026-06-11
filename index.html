@@ -738,8 +738,13 @@
     }
     .cam-chord-name.playing { animation: playing-pulse 1.2s ease-in-out infinite; }
     .cam-chord-num {
-      font-size: 1rem; color: rgba(255,255,255,0.5);
-      margin-top: 8px; letter-spacing: 0.5px;
+      position: fixed;
+      left: 0; right: 0; bottom: 76px;
+      z-index: 3;
+      font-size: 0.88rem; line-height: 1;
+      color: rgba(255,255,255,0.5);
+      margin-top: 0; letter-spacing: 0.5px;
+      pointer-events: none;
     }
     .cam-controls {
       position: absolute; bottom: 30px; left: 0; right: 0;
