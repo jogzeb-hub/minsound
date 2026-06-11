@@ -1658,8 +1658,13 @@ function normalizeQualityText(raw) {
   return null;
 }
 
+function normalizeQuotes(str) {
+  // iOS/Mac 스마트 쿼트 → ASCII 쌍따옴표
+  return str.replace(/[“”„«»]/g, '"');
+}
+
 function parseTextChordToken(token) {
-  const raw = token.trim();
+  const raw = normalizeQuotes(token.trim());
   if (!raw) return null;
   if (raw === '-' || raw === '—' || raw.toLowerCase() === 'x' || raw.toLowerCase() === 'rest') return null;
   // 가사 추출: C"가사" 또는 Am^3"가사" 형식 (따옴표 안 공백 허용)
@@ -1694,7 +1699,7 @@ function parseTextChordToken(token) {
 
 function parseTextChords(text) {
   // 따옴표 안 공백 보존하면서 토큰 분리
-  const tokens = (text.match(/[^\s,"]*"[^"]*"|[^\s,]+/g) || []).filter(Boolean);
+  const tokens = (normalizeQuotes(text).match(/[^\s,"]*"[^"]*"|[^\s,]+/g) || []).filter(Boolean);
   const parsed = [];
   const invalid = [];
   tokens.forEach(token => {
@@ -2306,7 +2311,7 @@ function chordsToText() {
 function mergeLyrics() {
   saveHistory();
   const input = document.getElementById('codeTextInput');
-  const tokens = (input.value.match(/[^\s,"]*"[^"]*"|[^\s,]+/g) || []).filter(Boolean);
+  const tokens = (normalizeQuotes(input.value).match(/[^\s,"]*"[^"]*"|[^\s,]+/g) || []).filter(Boolean);
   let changed = 0;
   for (let i = 0; i < tokens.length && i < chords.length; i++) {
     const token = tokens[i];
