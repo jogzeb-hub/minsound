@@ -897,12 +897,6 @@
       white-space:nowrap; flex-shrink:0; transition:all 0.15s;
     }
     .cam-filter-btn.active { background:rgba(255,255,255,0.22); border-color:#fff; color:#fff; }
-    .cam-pixel-density-row {
-      position:absolute; top:80px; left:0; right:0; z-index:5;
-      display:flex; align-items:center; gap:8px; justify-content:center; padding:0 20px;
-    }
-    .cam-pixel-density-row.hidden { display:none; }
-    .cam-density-icon { font-size:1rem; line-height:1; }
     .cam-density-slider {
       -webkit-appearance:none; appearance:none;
       width:160px; height:4px; border-radius:2px;
@@ -963,5 +957,3 @@
     /* 비디오 CSS 필터 클래스 */
     .cam-flt-film90    { filter:sepia(0.2) contrast(1.1) saturate(0.78) brightness(0.94) !important; }
     .cam-flt-bw        { filter:grayscale(1) contrast(1.22) brightness(0.90) !important; }
-    .cam-pixel-wrap { position:absolute; inset:0; z-index:1; pointer-events:none; }
-    #camPixelCanvas { width:100%; height:100%; image-rendering:pixelated; image-rendering:crisp-edges; object-fit:cover; }

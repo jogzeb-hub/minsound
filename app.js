@@ -2030,7 +2030,6 @@ const CAM_FILTER_DEFS = {
   none:     { cls: '',               grain: 0,    vig: 0    },
   film90:   { cls: 'cam-flt-film90', grain: 0.13, vig: 0.48 },
   bw:       { cls: 'cam-flt-bw',     grain: 0.11, vig: 0.38 },
-  pixel:    { cls: '',               grain: 0,    vig: 0    },
   videoart: { cls: '',               grain: 0,    vig: 0    },
 };
 let currentCamFilter = 'none';
@@ -2038,7 +2037,7 @@ let grainFrame = null, grainSeed = 0;
 let videoArtFrame = null;
 let videoArtColor = 'white'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
-let videoArtDecay = 0.06;   // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
+let videoArtDecay = 0.028;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
 let videoArtAmpPasses = 3;  // screen 증폭 횟수
 let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
 let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null;
@@ -2088,11 +2087,21 @@ function renderVideoArtFrame() {
   const W = _tmpCanvas.width, H = _tmpCanvas.height;
   const shift = Math.max(3, Math.round(W * 0.013));
 
-  // 1. 현재 프레임 (미러) → tmpCanvas
+  // 1. 현재 프레임 (미러, 선택시 픽셀화) → tmpCanvas
+  _tmpCtx.imageSmoothingEnabled = false;
+  _tmpCtx.clearRect(0, 0, W, H);
   _tmpCtx.save();
   _tmpCtx.translate(W, 0); _tmpCtx.scale(-1, 1);
-  _tmpCtx.drawImage(video, 0, 0, W, H);
-  _tmpCtx.restore();
+  if (pixelBlock > 1) {
+    const pw = Math.max(1, Math.round(W / pixelBlock));
+    const ph = Math.max(1, Math.round(H / pixelBlock));
+    _tmpCtx.drawImage(video, 0, 0, pw, ph);
+    _tmpCtx.restore();
+    _tmpCtx.drawImage(_tmpCanvas, 0, 0, pw, ph, 0, 0, W, H);
+  } else {
+    _tmpCtx.drawImage(video, 0, 0, W, H);
+    _tmpCtx.restore();
+  }
 
   // 2. 차분(diff) 계산: current XOR previous
   _diffCtx.clearRect(0, 0, W, H);
@@ -2163,41 +2172,7 @@ function stopVideoArt() {
   _tmpCanvas = _prevCanvas = _diffCanvas = null;
 }
 
-let _pixelFrame = null;
-let _pixelCtx = null;
-let pixelBlock = 10;
-
-function initPixelCanvas() {
-  const video = document.getElementById('camVideo');
-  const canvas = document.getElementById('camPixelCanvas');
-  const W = video.videoWidth || 480;
-  const H = video.videoHeight || 270;
-  const BLOCK = pixelBlock;
-  canvas.width = Math.round(W / BLOCK);
-  canvas.height = Math.round(H / BLOCK);
-  _pixelCtx = canvas.getContext('2d');
-  _pixelCtx.imageSmoothingEnabled = false;
-  document.getElementById('camPixelWrap').classList.remove('hidden');
-}
-
-function renderPixelFrame() {
-  const video = document.getElementById('camVideo');
-  if (!_pixelCtx || video.readyState < 2) {
-    _pixelFrame = requestAnimationFrame(renderPixelFrame); return;
-  }
-  const W = _pixelCtx.canvas.width, H = _pixelCtx.canvas.height;
-  _pixelCtx.save();
-  _pixelCtx.scale(-1, 1);
-  _pixelCtx.drawImage(video, -W, 0, W, H);
-  _pixelCtx.restore();
-  _pixelFrame = requestAnimationFrame(renderPixelFrame);
-}
-
-function stopPixel() {
-  if (_pixelFrame) { cancelAnimationFrame(_pixelFrame); _pixelFrame = null; }
-  document.getElementById('camPixelWrap').classList.add('hidden');
-  if (_pixelCtx) { _pixelCtx.clearRect(0, 0, _pixelCtx.canvas.width, _pixelCtx.canvas.height); _pixelCtx = null; }
-}
+let pixelBlock = 1;
 
 function applyCamFilter(name) {
   currentCamFilter = name;
@@ -2208,14 +2183,13 @@ function applyCamFilter(name) {
 
   // 기존 효과 정리
   if (name !== 'videoart') stopVideoArt();
-  if (name !== 'pixel') stopPixel();
 
   // CSS 필터 클래스 교체
   Object.values(CAM_FILTER_DEFS).forEach(f => { if (f.cls) video.classList.remove(f.cls); });
   if (cfg.cls) video.classList.add(cfg.cls);
 
   // canvas 효과: video 숨기고 canvas로 대체
-  video.style.opacity = (name === 'videoart' || name === 'pixel') ? '0' : '';
+  video.style.opacity = name === 'videoart' ? '0' : '';
 
   // Grain
   overlay.style.opacity = cfg.grain || 0;
@@ -2227,14 +2201,10 @@ function applyCamFilter(name) {
 
   // 비디오아트 시작
   if (name === 'videoart') {
+    pixelBlock = 1;
+    document.getElementById('camVaPixelSlider').value = 1;
     if (video.readyState >= 2) { initVideoArtCanvases(); renderVideoArtFrame(); }
     else video.addEventListener('playing', () => { initVideoArtCanvases(); renderVideoArtFrame(); }, { once: true });
-  }
-
-  // 픽셀 시작
-  if (name === 'pixel') {
-    if (video.readyState >= 2) { initPixelCanvas(); renderPixelFrame(); }
-    else video.addEventListener('playing', () => { initPixelCanvas(); renderPixelFrame(); }, { once: true });
   }
 
   // 버튼 상태
@@ -2242,8 +2212,7 @@ function applyCamFilter(name) {
     b.classList.toggle('active', b.dataset.filter === name);
   });
 
-  // 픽셀 농도 행 / 비디오아트 색상·슬라이더 행 show/hide
-  document.getElementById('camPixelDensityRow').classList.toggle('hidden', name !== 'pixel');
+  // 비디오아트 색상·슬라이더 행 show/hide
   document.getElementById('camVideoArtColorRow').classList.toggle('hidden', name !== 'videoart');
   document.getElementById('camVideoArtSlidersRow').classList.toggle('hidden', name !== 'videoart');
 }
@@ -2253,19 +2222,13 @@ document.getElementById('camFilterRow').addEventListener('click', e => {
   if (btn) applyCamFilter(btn.dataset.filter);
 });
 
-document.getElementById('camPixelDensitySlider').addEventListener('input', e => {
+document.getElementById('camVaPixelSlider').addEventListener('input', e => {
   pixelBlock = parseInt(e.target.value);
-  if (_pixelCtx) {
-    cancelAnimationFrame(_pixelFrame); _pixelFrame = null;
-    _pixelCtx = null;
-    initPixelCanvas();
-    renderPixelFrame();
-  }
 });
 
 document.getElementById('camVaDecaySlider').addEventListener('input', e => {
-  // slider 1(빠름)~10(느림) → decay 0.15~0.01
-  videoArtDecay = (11 - parseInt(e.target.value)) * 0.015;
+  // slider 1(빠름)~10(느림) → decay 0.07~0.007 (최대 약 10초)
+  videoArtDecay = (11 - parseInt(e.target.value)) * 0.007;
 });
 
 document.getElementById('camVaIntensitySlider').addEventListener('input', e => {

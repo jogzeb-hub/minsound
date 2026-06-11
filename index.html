@@ -524,9 +524,6 @@ E C#m A B
     <!-- 필터 오버레이 (grain, vignette, rgb 잔상) -->
     <div class="cam-filter-overlay" id="camFilterOverlay"></div>
     <div class="cam-vignette" id="camVignette"></div>
-    <div class="cam-pixel-wrap hidden" id="camPixelWrap">
-      <canvas id="camPixelCanvas"></canvas>
-    </div>
     <div class="cam-rgb-wrap hidden" id="camRgbWrap">
       <canvas class="cam-rgb-layer" id="camVideoCanvas"></canvas>
       <canvas class="cam-rgb-layer cam-rgb-r" id="camTrailR" style="transform:translateX(7px)"></canvas>
@@ -554,13 +551,7 @@ E C#m A B
       <button class="cam-filter-btn active" data-filter="none">없음</button>
       <button class="cam-filter-btn" data-filter="film90">📽 필름</button>
       <button class="cam-filter-btn" data-filter="bw">흑백</button>
-      <button class="cam-filter-btn" data-filter="pixel">🕹 픽셀</button>
       <button class="cam-filter-btn" data-filter="videoart">📼 비디오아트</button>
-    </div>
-    <div class="cam-pixel-density-row hidden" id="camPixelDensityRow">
-      <span class="cam-density-icon">⬛</span>
-      <input type="range" id="camPixelDensitySlider" min="4" max="32" step="2" value="10" class="cam-density-slider">
-      <span class="cam-density-icon">▪️</span>
     </div>
     <div class="cam-vacolor-row hidden" id="camVideoArtColorRow">
       <button class="cam-vacolor-btn active" data-color="white">흰색</button>
@@ -577,6 +568,10 @@ E C#m A B
       <div class="cam-vaslider-item">
         <span class="cam-vaslider-lbl">농도</span>
         <input type="range" id="camVaIntensitySlider" min="1" max="5" step="1" value="3" class="cam-density-slider">
+      </div>
+      <div class="cam-vaslider-item">
+        <span class="cam-vaslider-lbl">픽셀</span>
+        <input type="range" id="camVaPixelSlider" min="1" max="32" step="1" value="1" class="cam-density-slider">
       </div>
     </div>
     <div class="cam-controls">
