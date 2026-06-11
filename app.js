@@ -1480,6 +1480,11 @@ async function onPress() {
   currentIdx = idx;
   const c = chords[currentIdx];
   playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  if (_vaFlashOn && currentCamFilter === 'videoart') {
+    _vaFlashActive = true;
+    clearTimeout(_vaFlashTimer);
+    _vaFlashTimer = setTimeout(() => { _vaFlashActive = false; }, 420);
+  }
   renderChordList();
   updateCamDisplay();
   scrollToActive();
@@ -2080,6 +2085,7 @@ let grainFrame = null, grainSeed = 0;
 let videoArtFrame = null;
 let videoArtColor = 'rainbow'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
+let _vaFlashOn = false, _vaFlashActive = false, _vaFlashTimer = null;
 let videoArtDecay = 0.014;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 1 대응)
 let videoArtAmpPasses = 1;  // screen 증폭 횟수
 let _vidCtx = null, _trailCtx = null;
@@ -2159,7 +2165,7 @@ function renderVideoArtFrame(ts) {
 
   // 3. 차분 증폭 (screen 2회 → 쨍한 색)
   _diffCtx.globalCompositeOperation = 'screen';
-  const _passes = _isMobile ? Math.min(videoArtAmpPasses, 1) : videoArtAmpPasses;
+  const _passes = _vaFlashActive ? (_isMobile ? 6 : 10) : (_isMobile ? Math.min(videoArtAmpPasses, 1) : videoArtAmpPasses);
   for (let _p = 0; _p < _passes; _p++) _diffCtx.drawImage(_diffCanvas, 0, 0);
   _diffCtx.globalCompositeOperation = 'source-over';
 
@@ -2213,6 +2219,7 @@ function renderVideoArtFrame(ts) {
 
 function stopVideoArt() {
   if (videoArtFrame) { cancelAnimationFrame(videoArtFrame); videoArtFrame = null; }
+  _vaFlashActive = false; clearTimeout(_vaFlashTimer);
   document.getElementById('camRgbWrap').classList.add('hidden');
   [_vidCtx, _trailCtx].forEach(ctx => {
     if (ctx) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -2297,12 +2304,17 @@ document.querySelectorAll('input[type="range"]').forEach(slider => {
 
 document.getElementById('camVideoArtColorRow').addEventListener('click', e => {
   const btn = e.target.closest('.cam-vacolor-btn');
-  if (!btn) return;
+  if (!btn || !btn.dataset.color) return;
   videoArtColor = btn.dataset.color;
   _rainbowIdx = 0; _rainbowFrameCount = 0;
-  document.querySelectorAll('.cam-vacolor-btn').forEach(b => {
+  document.querySelectorAll('.cam-vacolor-btn[data-color]').forEach(b => {
     b.classList.toggle('active', b.dataset.color === videoArtColor);
   });
+});
+
+document.getElementById('camVaFlashBtn').addEventListener('click', () => {
+  _vaFlashOn = !_vaFlashOn;
+  document.getElementById('camVaFlashBtn').classList.toggle('active', _vaFlashOn);
 });
 
 // ── JSON 내보내기 ──
