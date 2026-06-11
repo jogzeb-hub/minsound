@@ -2116,7 +2116,7 @@ function renderVideoArtFrame() {
   [_rCtx, _gCtx, _bCtx].forEach(ctx => {
     if (_activeTrails.includes(ctx)) {
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.globalAlpha = 0.15;
+      ctx.globalAlpha = 0.07;
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
