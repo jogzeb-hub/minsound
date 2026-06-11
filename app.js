@@ -2165,7 +2165,7 @@ function renderVideoArtFrame(ts) {
 
   // 3. 차분 증폭 (screen 2회 → 쨍한 색)
   _diffCtx.globalCompositeOperation = 'screen';
-  const _passes = _vaFlashActive ? (_isMobile ? 6 : 10) : (_isMobile ? Math.min(videoArtAmpPasses, 1) : videoArtAmpPasses);
+  const _passes = _vaFlashActive ? (_isMobile ? 3 : 5) : (_isMobile ? Math.min(videoArtAmpPasses, 1) : videoArtAmpPasses);
   for (let _p = 0; _p < _passes; _p++) _diffCtx.drawImage(_diffCanvas, 0, 0);
   _diffCtx.globalCompositeOperation = 'source-over';
 
