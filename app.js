@@ -1683,6 +1683,27 @@ spaceBtn.addEventListener('pointerdown', e => { spaceBtn.setPointerCapture(e.poi
 spaceBtn.addEventListener('pointerup', () => onRelease());
 spaceBtn.addEventListener('pointercancel', () => onRelease());
 
+const CHROMATIC_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function transposeAllChords(semitones) {
+  if (!chords.some(c => c)) return;
+  saveHistory();
+  chords.forEach((c, i) => {
+    if (!c) return;
+    const midi = (c.oct + 1) * 12 + NOTE_PCS[c.root] + (ACC_OFFSET[c.acc] ?? 0);
+    const newMidi = midi + semitones;
+    const newPc = ((newMidi % 12) + 12) % 12;
+    const noteStr = CHROMATIC_SHARP[newPc];
+    c.root = noteStr[0];
+    c.acc  = noteStr.length > 1 ? noteStr[1] : '';
+    c.oct  = Math.floor(newMidi / 12) - 1;
+    updateChordDerived(i);
+  });
+  renderChordList();
+  updateCamDisplay();
+}
+document.getElementById('transposeDownBtn').addEventListener('click', () => transposeAllChords(-1));
+document.getElementById('transposeUpBtn').addEventListener('click', () => transposeAllChords(1));
+
 document.getElementById('resetBtn').addEventListener('click', goToStart);
 document.getElementById('camResetBtn').addEventListener('click', goToStart);
 document.getElementById('backBtn').addEventListener('click', goBack);
