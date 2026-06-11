@@ -448,7 +448,7 @@
     .cam-lyrics-text.lyric-slide-in  { animation: lyricsSlideIn  0.28s cubic-bezier(0.4,0,0.2,1) forwards; }
     .cam-lyrics-text.lyric-slide-out { animation: lyricsSlideOut 0.16s ease forwards; }
     .cam-lyrics-toggle {
-      position: absolute; bottom: 76px; right: 16px; z-index: 4;
+      position: absolute; bottom: 58px; right: 16px; z-index: 4;
       background: rgba(255,255,255,0.12);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.22);
@@ -883,9 +883,6 @@
     /* ── 마디선 ── */
     .chord-card.bar-start { border-left: 2px solid rgba(255,255,255,0.22); }
 
-
-    /* ── 카메라 피아노 다이어그램 ── */
-    .cam-piano-wrap { position:absolute; bottom:130px; left:50%; transform:translateX(-50%); z-index:3; opacity:0.88; pointer-events:none; }
 
     /* ── JSON 내보내기/불러오기 ── */
     .modal-io-row { display:flex; gap:8px; margin-bottom:10px; }
@@ -1474,8 +1471,6 @@ E C#m A B
       <div class="cam-lyrics-next" id="camLyricsNext"></div>
     </div>
     <button class="cam-lyrics-toggle" id="camLyricsToggle">가사 OFF</button>
-    <div class="cam-piano-wrap" id="camPianoWrap" style="display:none"></div>
-    <button class="cam-lyrics-toggle" id="camPianoToggle" style="bottom:108px;right:16px">피아노 OFF</button>
     <div class="cam-filter-row" id="camFilterRow">
       <button class="cam-filter-btn active" data-filter="none">없음</button>
       <button class="cam-filter-btn" data-filter="film90">📽 필름</button>
@@ -1592,9 +1587,6 @@ let tapTimes = [];
 let countInEnabled = false;
 let countSynth = null;
 
-
-// ── 카메라 피아노 ──
-let camPianoOn = false;
 
 // ── 사운드 / 자동재생 ──
 let currentSound = 'basic';
@@ -3301,32 +3293,6 @@ document.getElementById('saveNameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('saveNewBtn').click();
 });
 
-
-// ── 카메라 피아노 다이어그램 ──
-function buildPianoSVG(pitchClasses) {
-  const wW = 30, wH = 70, bW = 18, bH = 42;
-  const whitePC = [0, 2, 4, 5, 7, 9, 11];
-  const blackDefs = [
-    { wIdx: 0, pc: 1 }, { wIdx: 1, pc: 3 },
-    { wIdx: 3, pc: 6 }, { wIdx: 4, pc: 8 }, { wIdx: 5, pc: 10 }
-  ];
-  const totalW = whitePC.length * wW;
-  let whites = '';
-  whitePC.forEach((pc, i) => {
-    const active = pitchClasses.has(pc);
-    const fill = active ? '#4a90d9' : 'rgba(240,240,240,0.95)';
-    whites += `<rect x="${i * wW}" y="0" width="${wW - 1}" height="${wH}" fill="${fill}" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>`;
-  });
-  let blacks = '';
-  blackDefs.forEach(({ wIdx, pc }) => {
-    const active = pitchClasses.has(pc);
-    const fill = active ? '#2060b0' : 'rgba(20,20,20,0.92)';
-    const x = wIdx * wW + (wW - bW / 2) - bW / 2 + wW * 0.65 - wW * 0.65 + wW * 0.65;
-    blacks += `<rect x="${wIdx * wW + wW - bW / 2}" y="0" width="${bW}" height="${bH}" fill="${fill}" stroke="rgba(0,0,0,0.5)" stroke-width="1" rx="2"/>`;
-  });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${wH}" width="${totalW}" height="${wH}">${whites}${blacks}</svg>`;
-}
-
 // ── 카메라 ──
 let _camStream = null, _wakeLock = null;
 
@@ -3365,19 +3331,6 @@ function updateCamDisplay() {
   animateLyricsText(lyricsTextEl, (cur >= 0 && chords[cur]) ? (chords[cur].lyrics || '') : '');
   fitCamLyrics();
   if (lyricsNextEl) lyricsNextEl.textContent  = (ni2 >= 0 && ni2 !== cur && chords[ni2]) ? (chords[ni2].lyrics || '') : '';
-
-  // 카메라 피아노 다이어그램
-  const pianoWrap = document.getElementById('camPianoWrap');
-  if (pianoWrap) {
-    if (camPianoOn && cur >= 0 && chords[cur]) {
-      const c2 = chords[cur];
-      const midiNotes = getChordMidi(c2.root, c2.acc, c2.oct, c2.quality, c2.inv);
-      const pitchClasses = new Set(midiNotes.map(n => ((n % 12) + 12) % 12));
-      pianoWrap.innerHTML = buildPianoSVG(pitchClasses);
-    } else {
-      pianoWrap.innerHTML = '';
-    }
-  }
 
   if ((isSpaceHeld || autoPlayActive) && cur !== -1) {
     const c = chords[cur];
@@ -3728,19 +3681,6 @@ function applyCamFilter(name) {
 document.getElementById('camFilterRow').addEventListener('click', e => {
   const btn = e.target.closest('.cam-filter-btn');
   if (btn) applyCamFilter(btn.dataset.filter);
-});
-
-// ── 카메라 피아노 토글 ──
-document.getElementById('camPianoToggle').addEventListener('click', () => {
-  camPianoOn = !camPianoOn;
-  const wrap = document.getElementById('camPianoWrap');
-  const btn = document.getElementById('camPianoToggle');
-  if (wrap) wrap.style.display = camPianoOn ? '' : 'none';
-  if (btn) {
-    btn.textContent = camPianoOn ? '피아노 ON' : '피아노 OFF';
-    btn.classList.toggle('active', camPianoOn);
-  }
-  updateCamDisplay();
 });
 
 // ── JSON 내보내기 ──
