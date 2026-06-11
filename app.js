@@ -397,35 +397,39 @@ function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
 }
 
 // ── 카메라 엔딩 아르페지오 ──
-let _endingPoly = null;
-function ensureEndingSynth() {
-  if (_endingPoly) return;
-  const rv = new Tone.Reverb({ decay: 5, wet: 0.55 }); rv.toDestination();
-  const lim = new Tone.Limiter(-3); lim.connect(rv);
-  _endingPoly = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.025, decay: 0.4, sustain: 0.55, release: 4.5 },
-  });
-  _endingPoly.connect(lim);
-}
-
 function playCamEndingArpeggio() {
   if (!audioReady) return;
-  const idx = currentIdx >= 0 && currentIdx < chords.length ? currentIdx : -1;
-  const c = idx >= 0 ? chords[idx] : null;
+  const c = currentIdx >= 0 && currentIdx < chords.length ? chords[currentIdx] : null;
   if (!c) return;
-  ensureEndingSynth();
-  stopSound();
+
   const midiNotes = getChordMidi(c.root, c.acc, c.oct, c.quality, c.inv);
-  const bassNote = midiNotes[0] - 12;
-  const allNotes = [bassNote, ...midiNotes].sort((a, b) => a - b);
-  const noteNames = allNotes.map(midiToNoteName);
-  const step = 0.13;
-  const dur = 4.5;
+  const bassName = midiToNoteName(Math.max(12, midiNotes[0] - 12));
+  const upperNames = midiNotes.map(midiToNoteName);
+  const allNames = [bassName, ...upperNames];
+
+  const step = 0.10;
+  const dur = 2.2;
   const now = Tone.now() + 0.04;
-  noteNames.forEach((n, i) => {
-    _endingPoly.triggerAttackRelease(n, dur, now + i * step, i === 0 ? 0.72 : 0.55);
-  });
+
+  if (currentSound === 'ep1' || currentSound === 'ep2') {
+    ensureEPSynth(currentSound);
+    const sampler = currentSound === 'ep1' ? ep1Poly : ep2Poly;
+    sampler.releaseAll(Tone.now());
+    allNames.forEach((n, i) => {
+      const vel = Math.min(1, i === 0 ? 0.92 * bassLoudComp(n) : 0.80);
+      sampler.triggerAttackRelease(n, dur, now + i * step, vel);
+    });
+  } else if (currentSound === 'balladpiano') {
+    ensureBalladSynth();
+    if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
+    lastBalladNotes = allNames;
+    allNames.forEach((n, i) => {
+      const vel = Math.min(1.1, i === 0 ? 0.72 * bassLoudComp(n) : 0.66);
+      balladPoly.triggerAttackRelease(n, dur * 1.1, now + i * step, vel);
+    });
+  } else {
+    playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  }
 }
 
 // ── 카운트인 신스 ──
