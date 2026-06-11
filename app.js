@@ -434,8 +434,12 @@ function playCamEndingArpeggio() {
   };
 
   const fadeOut = (gainNode, normalVal, fadeDur) => {
+    const cutAt = Tone.now() + 0.03; // 30ms 무음 전환
     gainNode.gain.cancelScheduledValues(Tone.now());
-    gainNode.gain.setValueAtTime(normalVal, releaseAt);
+    gainNode.gain.setValueAtTime(normalVal, Tone.now());
+    gainNode.gain.linearRampToValueAtTime(0, cutAt);        // 이전 음 무음 컷
+    gainNode.gain.setValueAtTime(normalVal, now);           // 아르페지오 시작 시 복원
+    gainNode.gain.setValueAtTime(normalVal, releaseAt);     // 유지
     gainNode.gain.linearRampToValueAtTime(0.0001, releaseAt + fadeDur);
     setTimeout(() => {
       gainNode.gain.cancelScheduledValues(Tone.now());
@@ -447,15 +451,15 @@ function playCamEndingArpeggio() {
     ensureEPSynth(currentSound);
     const sampler = currentSound === 'ep1' ? ep1Poly : ep2Poly;
     const gainNode = currentSound === 'ep1' ? ep1Gain : ep2Gain;
-    sampler.releaseAll(Tone.now());
-    allNames.forEach((n, i) => sampler.triggerAttack(n, now + times[i], getVel(i, n)));
     if (gainNode) fadeOut(gainNode, 2.4, 6.0);
+    sampler.releaseAll(Tone.now() + 0.03); // gain이 0 된 후 무음 종료
+    allNames.forEach((n, i) => sampler.triggerAttack(n, now + times[i], getVel(i, n)));
   } else if (currentSound === 'balladpiano') {
     ensureBalladSynth();
-    if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
+    if (balladGain) fadeOut(balladGain, 0.72, 8.0);
+    if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now() + 0.03);
     lastBalladNotes = allNames;
     allNames.forEach((n, i) => balladPoly.triggerAttack(n, now + times[i], getVel(i, n)));
-    if (balladGain) fadeOut(balladGain, 0.72, 8.0);
   } else {
     playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
   }
