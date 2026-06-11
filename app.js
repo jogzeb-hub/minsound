@@ -2037,7 +2037,7 @@ let grainFrame = null, grainSeed = 0;
 let videoArtFrame = null;
 let videoArtColor = 'white'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
-let videoArtDecay = 0.028;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
+let videoArtDecay = 0.0056;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
 let videoArtAmpPasses = 3;  // screen 증폭 횟수
 let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
 let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null;
@@ -2227,8 +2227,8 @@ document.getElementById('camVaPixelSlider').addEventListener('input', e => {
 });
 
 document.getElementById('camVaDecaySlider').addEventListener('input', e => {
-  // slider 1(빠름)~10(느림) → decay 0.07~0.007 (최대 약 10초)
-  videoArtDecay = (11 - parseInt(e.target.value)) * 0.007;
+  // slider 1(빠름)~10(느림) → decay 0.014~0.0014 (최대 약 50초)
+  videoArtDecay = (11 - parseInt(e.target.value)) * 0.0014;
 });
 
 document.getElementById('camVaIntensitySlider').addEventListener('input', e => {
