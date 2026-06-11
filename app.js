@@ -2091,6 +2091,7 @@ let videoArtFrame = null;
 let videoArtColor = 'rainbow'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
 let _vaFlashOn = false, _vaFlashActive = false, _vaFlashTimer = null;
+let videoArtTrailMode = 'normal'; // 'normal' | 'bloom' | 'gravity' | 'vortex'
 let videoArtDecay = 0.014;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 1 대응)
 let videoArtAmpPasses = 1;  // screen 증폭 횟수
 let _vidCtx = null, _trailCtx = null;
@@ -2178,10 +2179,26 @@ function renderVideoArtFrame(ts) {
   _prevCtx.clearRect(0, 0, W, H);
   _prevCtx.drawImage(_tmpCanvas, 0, 0);
 
-  // 5. 잔상 감쇠
-  _trailCtx.globalCompositeOperation = 'destination-out';
-  _trailCtx.globalAlpha = videoArtDecay;
-  _trailCtx.fillRect(0, 0, W, H);
+  // 5. 잔상 감쇠 (모드별 transform 적용)
+  const _keepAlpha = Math.max(0, 1 - videoArtDecay);
+  _trailCtx.save();
+  _trailCtx.globalCompositeOperation = 'copy';
+  _trailCtx.globalAlpha = _keepAlpha;
+  if (videoArtTrailMode === 'bloom') {
+    const _s = 1.008;
+    _trailCtx.translate(W / 2, H / 2);
+    _trailCtx.scale(_s, _s);
+    _trailCtx.drawImage(_trailCanvas, -W / 2, -H / 2);
+  } else if (videoArtTrailMode === 'gravity') {
+    _trailCtx.drawImage(_trailCanvas, 0, 2);
+  } else if (videoArtTrailMode === 'vortex') {
+    _trailCtx.translate(W / 2, H / 2);
+    _trailCtx.rotate(0.6 * Math.PI / 180);
+    _trailCtx.drawImage(_trailCanvas, -W / 2, -H / 2);
+  } else {
+    _trailCtx.drawImage(_trailCanvas, 0, 0);
+  }
+  _trailCtx.restore();
   _trailCtx.globalAlpha = 1;
   _trailCtx.globalCompositeOperation = 'source-over';
 
@@ -2279,9 +2296,10 @@ function applyCamFilter(name) {
     b.classList.toggle('active', b.dataset.filter === name);
   });
 
-  // 비디오아트 색상·슬라이더 행 show/hide
+  // 비디오아트 색상·슬라이더·잔상모드 행 show/hide
   document.getElementById('camVideoArtColorRow').classList.toggle('hidden', name !== 'videoart');
   document.getElementById('camVideoArtSlidersRow').classList.toggle('hidden', name !== 'videoart');
+  document.getElementById('camVideoArtTrailRow').classList.toggle('hidden', name !== 'videoart');
 }
 
 document.getElementById('camFilterRow').addEventListener('click', e => {
@@ -2320,6 +2338,15 @@ document.getElementById('camVideoArtColorRow').addEventListener('click', e => {
 document.getElementById('camVaFlashBtn').addEventListener('click', () => {
   _vaFlashOn = !_vaFlashOn;
   document.getElementById('camVaFlashBtn').classList.toggle('active', _vaFlashOn);
+});
+
+document.getElementById('camVideoArtTrailRow').addEventListener('click', e => {
+  const btn = e.target.closest('.cam-vatrail-btn');
+  if (!btn) return;
+  videoArtTrailMode = btn.dataset.trail;
+  document.querySelectorAll('.cam-vatrail-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.trail === videoArtTrailMode);
+  });
 });
 
 // ── JSON 내보내기 ──
