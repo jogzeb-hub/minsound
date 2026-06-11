@@ -549,33 +549,35 @@ E C#m A B
       <button class="cam-filter-btn" data-filter="bw">흑백</button>
       <button class="cam-filter-btn" data-filter="videoart">📼 비디오아트</button>
     </div>
-    <div class="cam-vacolor-row hidden" id="camVideoArtColorRow">
-      <button class="cam-vacolor-btn active" data-color="rainbow">무지개</button>
-      <button class="cam-vacolor-btn" data-color="white">흰색</button>
-      <button class="cam-vacolor-btn" data-color="r">빨강</button>
-      <button class="cam-vacolor-btn" data-color="g">초록</button>
-      <button class="cam-vacolor-btn" data-color="b">파랑</button>
-      <button class="cam-vacolor-btn cam-vaflash-btn" id="camVaFlashBtn">⚡ 폭발</button>
-    </div>
-    <div class="cam-vaslider-row hidden" id="camVideoArtSlidersRow">
-      <div class="cam-vaslider-item">
-        <span class="cam-vaslider-lbl">잔상</span>
-        <input type="range" id="camVaDecaySlider" min="1" max="10" step="1" value="1" class="cam-density-slider">
+    <div class="cam-va-panel hidden" id="camVaPanel">
+      <div class="cam-vacolor-row" id="camVideoArtColorRow">
+        <button class="cam-vacolor-btn active" data-color="rainbow">무지개</button>
+        <button class="cam-vacolor-btn" data-color="white">흰색</button>
+        <button class="cam-vacolor-btn" data-color="r">빨강</button>
+        <button class="cam-vacolor-btn" data-color="g">초록</button>
+        <button class="cam-vacolor-btn" data-color="b">파랑</button>
       </div>
-      <div class="cam-vaslider-item">
-        <span class="cam-vaslider-lbl">농도</span>
-        <input type="range" id="camVaIntensitySlider" min="1" max="10" step="1" value="1" class="cam-density-slider">
+      <div class="cam-vaslider-row" id="camVideoArtSlidersRow">
+        <div class="cam-vaslider-item">
+          <span class="cam-vaslider-lbl">잔상</span>
+          <input type="range" id="camVaDecaySlider" min="1" max="10" step="1" value="1" class="cam-density-slider">
+        </div>
+        <div class="cam-vaslider-item">
+          <span class="cam-vaslider-lbl">농도</span>
+          <input type="range" id="camVaIntensitySlider" min="1" max="10" step="1" value="1" class="cam-density-slider">
+        </div>
+        <div class="cam-vaslider-item">
+          <span class="cam-vaslider-lbl">모자이크</span>
+          <input type="range" id="camVaPixelSlider" min="1" max="32" step="1" value="1" class="cam-density-slider">
+        </div>
       </div>
-      <div class="cam-vaslider-item">
-        <span class="cam-vaslider-lbl">모자이크</span>
-        <input type="range" id="camVaPixelSlider" min="1" max="32" step="1" value="1" class="cam-density-slider">
+      <div class="cam-vacolor-row" id="camVideoArtTrailRow">
+        <button class="cam-vacolor-btn cam-vatrail-btn active" data-trail="normal">기본</button>
+        <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="bloom">블룸</button>
+        <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="gravity">중력</button>
+        <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="vortex">회오리</button>
+        <button class="cam-vacolor-btn cam-vaflash-btn" id="camVaFlashBtn">⚡ 폭발</button>
       </div>
-    </div>
-    <div class="cam-vacolor-row hidden" id="camVideoArtTrailRow">
-      <button class="cam-vacolor-btn cam-vatrail-btn active" data-trail="normal">기본</button>
-      <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="bloom">블룸</button>
-      <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="gravity">중력</button>
-      <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="vortex">회오리</button>
     </div>
     <div class="cam-controls">
       <button class="cam-exit-btn" id="camResetBtn">⏮ 처음</button>

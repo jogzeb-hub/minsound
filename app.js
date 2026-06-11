@@ -2296,10 +2296,8 @@ function applyCamFilter(name) {
     b.classList.toggle('active', b.dataset.filter === name);
   });
 
-  // 비디오아트 색상·슬라이더·잔상모드 행 show/hide
-  document.getElementById('camVideoArtColorRow').classList.toggle('hidden', name !== 'videoart');
-  document.getElementById('camVideoArtSlidersRow').classList.toggle('hidden', name !== 'videoart');
-  document.getElementById('camVideoArtTrailRow').classList.toggle('hidden', name !== 'videoart');
+  // 비디오아트 패널 show/hide
+  document.getElementById('camVaPanel').classList.toggle('hidden', name !== 'videoart');
 }
 
 document.getElementById('camFilterRow').addEventListener('click', e => {
