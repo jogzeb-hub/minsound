@@ -28,23 +28,58 @@ const QUALITY_COLORS = {
 const LABEL_MAP = { maj:'', '69':'6/9' };
 const SAVES_KEY = 'minsound_saves';
 const SAMPLE_PROJECT = (function() {
-  const M='maj',m='m',S7='7';
-  const mc=(r,a,q,l)=>({root:r,acc:a,oct:4,quality:q,inv:0,
-    label:r+(a==='#'?'♯':a==='b'?'♭':'')+({maj:'',m:'m','7':'7',maj7:'maj7'}[q]||q),
-    color:{maj:'#4a90d9',m:'#5a9e6f','7':'#e8a44a',maj7:'#5a9e9e'}[q]||'#4a90d9',
-    lyrics:l});
   const ch=[
-    mc('E','',M,'사랑하기'),null,
-    mc('C','#',m,'때문에'),null,
-    mc('A','',M,'난 그대를'),null,
-    mc('B','',M,'보내드려'),null,
-    mc('E','',M,'슬프지만'),null,
-    mc('A','',M,'어쩔수가'),null,
-    mc('B','',S7,'없어요'),null,
-    mc('E','',M,''),null,
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'처음 느낀 그대'},null,
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:'눈빛은'},
+    {root:'A',acc:'n',oct:3,quality:'m',inv:0,label:'Am',color:'#5a9e6f',lyrics:''},
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'혼자만의 오해'},null,
+    {root:'G',acc:'n',oct:3,quality:'7',inv:0,label:'G7',color:'#e8a44a',lyrics:'였던가요'},null,
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'해맑은 미소로 나'},null,
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:'를'},
+    {root:'A',acc:'n',oct:3,quality:'m',inv:0,label:'Am',color:'#5a9e6f',lyrics:''},
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'바보로 '},
+    {root:'G',acc:'n',oct:3,quality:'7',inv:0,label:'G7',color:'#e8a44a',lyrics:'만들었'},
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'소'},null,
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'내 곁을 떠나가던'},null,
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:'날'},
+    {root:'A',acc:'n',oct:3,quality:'m',inv:0,label:'Am',color:'#5a9e6f',lyrics:''},
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'가슴에 품었던'},null,
+    {root:'G',acc:'n',oct:3,quality:'7',inv:0,label:'G7',color:'#e8a44a',lyrics:'분홍빛의'},null,
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'수많은 추억들'},null,
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:'이'},
+    {root:'A',acc:'n',oct:3,quality:'m',inv:0,label:'Am',color:'#5a9e6f',lyrics:''},
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'푸르게'},
+    {root:'G',acc:'n',oct:3,quality:'7',inv:0,label:'G7',color:'#e8a44a',lyrics:'바래졌'},
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'소'},null,
+    {root:'F',acc:'n',oct:3,quality:'maj',inv:0,label:'F',color:'#4a90d9',lyrics:'어제는 떠난'},null,
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:'그대를'},null,
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'못하는 내가'},null,
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'미웠죠'},null,
+    {root:'F',acc:'n',oct:3,quality:'maj',inv:0,label:'F',color:'#4a90d9',lyrics:'하지만 이젠'},null,
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:'깨달아'},
+    {root:'A',acc:'n',oct:3,quality:'m',inv:0,label:'Am',color:'#5a9e6f',lyrics:'요'},
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'그대만의 나였음'},null,
+    {root:'G',acc:'n',oct:3,quality:'7',inv:0,label:'G7',color:'#e8a44a',lyrics:'을 다시'},null,
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:'돌아온 그댈 위해'},null,
+    {root:'A',acc:'n',oct:3,quality:'7',inv:0,label:'A7',color:'#e8a44a',lyrics:'내'},null,
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'모든 걸 드릴테요'},null,
+    {root:'F',acc:'n',oct:3,quality:'m',inv:0,label:'Fm',color:'#5a9e6f',lyrics:''},
+    {root:'G',acc:'n',oct:3,quality:'7',inv:0,label:'G7',color:'#e8a44a',lyrics:'우리'},
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:'이대로 영원히'},null,
+    {root:'A',acc:'n',oct:3,quality:'7',inv:0,label:'A7',color:'#e8a44a',lyrics:''},null,
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'헤어지지 않으'},null,
+    {root:'F',acc:'n',oct:3,quality:'m',inv:0,label:'Fm',color:'#5a9e6f',lyrics:'리'},
+    {root:'G',acc:'n',oct:2,quality:'7',inv:0,label:'G7',color:'#e8a44a',lyrics:''},
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'나 오직 그대만'},
+    {root:'E',acc:'n',oct:3,quality:'m',inv:0,label:'Em',color:'#5a9e6f',lyrics:''},
+    {root:'G',acc:'n',oct:3,quality:'m',inv:0,label:'Gm',color:'#5a9e6f',lyrics:'을'},
+    {root:'A',acc:'n',oct:3,quality:'7',inv:0,label:'A7',color:'#e8a44a',lyrics:''},
+    {root:'D',acc:'n',oct:3,quality:'m7',inv:0,label:'Dm7',color:'#9e5aae',lyrics:'사랑하기'},
+    {root:'G',acc:'n',oct:3,quality:'7',inv:0,label:'G7',color:'#e8a44a',lyrics:'때문'},
+    {root:'C',acc:'n',oct:3,quality:'maj7',inv:0,label:'Cmaj7',color:'#5a9e9e',lyrics:'에'},null,
   ];
-  const opts={bpm:72,sound:'balladpiano',cpr:4,lyricsVisible:true,camLyricsOn:true};
-  return {name:'사랑하기 때문에 (이문세)',date:'샘플 (기본 제공)',chords:ch,...opts,options:opts};
+  const opts={bpm:120,sound:'ep1',cpr:8,lyricsVisible:true,camLyricsOn:true};
+  return {name:'사랑하기때문에 - 유재하',date:'샘플 (기본 제공)',chords:ch,...opts,options:opts};
 })();
 const PC_TO_SHARP = [
   ['C','n'], ['C','#'], ['D','n'], ['D','#'], ['E','n'], ['F','n'],
