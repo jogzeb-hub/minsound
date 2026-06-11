@@ -897,6 +897,23 @@
       white-space:nowrap; flex-shrink:0; transition:all 0.15s;
     }
     .cam-filter-btn.active { background:rgba(255,255,255,0.22); border-color:#fff; color:#fff; }
+    .cam-pixel-density-row {
+      position:absolute; top:80px; left:0; right:0; z-index:5;
+      display:flex; align-items:center; gap:8px; justify-content:center; padding:0 20px;
+    }
+    .cam-pixel-density-row.hidden { display:none; }
+    .cam-density-icon { font-size:1rem; line-height:1; }
+    .cam-density-slider {
+      -webkit-appearance:none; appearance:none;
+      width:160px; height:4px; border-radius:2px;
+      background:rgba(255,255,255,0.25); outline:none; cursor:pointer;
+    }
+    .cam-density-slider::-webkit-slider-thumb {
+      -webkit-appearance:none; appearance:none;
+      width:18px; height:18px; border-radius:50%;
+      background:#fff; cursor:pointer;
+      box-shadow:0 0 4px rgba(0,0,0,0.5);
+    }
     .cam-vacolor-row {
       position:absolute; top:80px; left:0; right:0; z-index:5;
       display:flex; gap:5px; justify-content:center; padding:0 10px;

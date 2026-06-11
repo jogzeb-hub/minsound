@@ -557,6 +557,11 @@ E C#m A B
       <button class="cam-filter-btn" data-filter="pixel">🕹 픽셀</button>
       <button class="cam-filter-btn" data-filter="videoart">📼 비디오아트</button>
     </div>
+    <div class="cam-pixel-density-row hidden" id="camPixelDensityRow">
+      <span class="cam-density-icon">⬛</span>
+      <input type="range" id="camPixelDensitySlider" min="4" max="32" step="2" value="10" class="cam-density-slider">
+      <span class="cam-density-icon">▪️</span>
+    </div>
     <div class="cam-vacolor-row hidden" id="camVideoArtColorRow">
       <button class="cam-vacolor-btn active" data-color="white">흰색</button>
       <button class="cam-vacolor-btn" data-color="r">빨강</button>

@@ -2152,13 +2152,14 @@ function stopVideoArt() {
 
 let _pixelFrame = null;
 let _pixelCtx = null;
+let pixelBlock = 10;
 
 function initPixelCanvas() {
   const video = document.getElementById('camVideo');
   const canvas = document.getElementById('camPixelCanvas');
   const W = video.videoWidth || 480;
   const H = video.videoHeight || 270;
-  const BLOCK = 10;
+  const BLOCK = pixelBlock;
   canvas.width = Math.round(W / BLOCK);
   canvas.height = Math.round(H / BLOCK);
   _pixelCtx = canvas.getContext('2d');
@@ -2228,13 +2229,24 @@ function applyCamFilter(name) {
     b.classList.toggle('active', b.dataset.filter === name);
   });
 
-  // 비디오아트 색상 행 show/hide
+  // 픽셀 농도 행 / 비디오아트 색상 행 show/hide
+  document.getElementById('camPixelDensityRow').classList.toggle('hidden', name !== 'pixel');
   document.getElementById('camVideoArtColorRow').classList.toggle('hidden', name !== 'videoart');
 }
 
 document.getElementById('camFilterRow').addEventListener('click', e => {
   const btn = e.target.closest('.cam-filter-btn');
   if (btn) applyCamFilter(btn.dataset.filter);
+});
+
+document.getElementById('camPixelDensitySlider').addEventListener('input', e => {
+  pixelBlock = parseInt(e.target.value);
+  if (_pixelCtx) {
+    cancelAnimationFrame(_pixelFrame); _pixelFrame = null;
+    _pixelCtx = null;
+    initPixelCanvas();
+    renderPixelFrame();
+  }
 });
 
 document.getElementById('camVideoArtColorRow').addEventListener('click', e => {
