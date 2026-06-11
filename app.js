@@ -403,9 +403,10 @@ function playCamEndingArpeggio() {
   if (!c) return;
 
   const midiNotes = getChordMidi(c.root, c.acc, c.oct, c.quality, c.inv);
-  // 베이스(근음 옥타브 아래) → 코드음 → 캡(최고음 옥타브 위) 로 착지감 부여
-  const bassMidi = Math.max(12, midiNotes[0] - 12);
-  const capMidi  = midiNotes[midiNotes.length - 1] + 12;
+  // 베이스(근음 옥타브 아래) → 코드음 → 캡(근음 한 옥타브 위) 로 근음 착지
+  const rootMidi = (c.oct + 1) * 12 + NOTE_PCS[c.root] + (ACC_OFFSET[c.acc] ?? 0);
+  const bassMidi = Math.max(12, rootMidi - 12);
+  const capMidi  = rootMidi + 12;
   const allMidi  = [bassMidi, ...midiNotes, capMidi];
   const allNames = allMidi.map(midiToNoteName);
   const last = allNames.length - 1;
@@ -415,7 +416,7 @@ function playCamEndingArpeggio() {
   let t = 0;
   allNames.forEach((_, i) => {
     times.push(t);
-    t += i >= last - 1 ? 0.10 : 0.06;
+    t += i >= last - 1 ? 0.14 : 0.10;
   });
 
   const dur = 3.5;
