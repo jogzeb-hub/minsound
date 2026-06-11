@@ -2035,7 +2035,7 @@ const CAM_FILTER_DEFS = {
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let videoArtFrame = null;
-let videoArtColor = 'white'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
+let videoArtColor = 'rainbow'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
 let videoArtDecay = 0.0056;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
 let videoArtAmpPasses = 6;  // screen 증폭 횟수
