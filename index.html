@@ -37,24 +37,27 @@
     header {
       flex-shrink: 0;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 8px 14px 7px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      gap: 8px;
+      gap: 6px;
     }
-    .logo { font-size: 1.25rem; font-weight: 900; color: var(--accent); letter-spacing: -1px; }
-    .header-btns { display: flex; gap: 6px; margin-left: auto; }
+    .header-top { display:flex; align-items:baseline; gap:8px; }
+    .logo { font-size: 1.2rem; font-weight: 900; color: var(--accent); letter-spacing: -1px; }
+    .logo-sub { font-size:0.68rem; color:var(--muted); }
+    .header-btns { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
     .icon-btn {
       background: none;
       border: 1px solid var(--border);
       color: var(--text);
       border-radius: 8px;
-      padding: 5px 11px;
+      padding: 5px 4px;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       white-space: nowrap;
+      text-align: center;
     }
     .icon-btn:hover { background: rgba(0,168,90,0.08); }
 
@@ -423,16 +426,16 @@
     .cam-lyrics-prev, .cam-lyrics-next {
       color: rgba(255,255,255,0.40); font-size: 0.9rem; font-weight: 500;
       text-shadow: 0 2px 8px rgba(0,0,0,0.7);
-      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       line-height: 1.4;
     }
-    .cam-lyrics-prev { text-align: right; }
-    .cam-lyrics-next { text-align: left; }
+    .cam-lyrics-prev { text-align: right; padding-right: 20px; }
+    .cam-lyrics-next { text-align: left; padding-left: 20px; }
     .cam-lyrics-text {
       color: #fff; font-size: 1.3rem; font-weight: 700;
       text-shadow: 0 2px 10px rgba(0,0,0,0.8);
       flex-shrink: 0; text-align: center; line-height: 1.4;
-      will-change: transform, opacity;
+      max-width: 54%; will-change: transform, opacity;
     }
     @keyframes lyricsSlideIn {
       from { transform: translateX(72px); opacity: 0; }
@@ -476,9 +479,14 @@
       background: var(--surface);
       border-top: 1px solid var(--border);
     }
-    .auto-row {
-      display: flex; align-items: center; gap: 6px; margin-bottom: 7px; flex-wrap: wrap;
+    .auto-row-top {
+      display:flex; align-items:center; gap:6px; margin-bottom:5px; flex-wrap:nowrap;
     }
+    .auto-row-bot {
+      display:flex; align-items:center; gap:5px; margin-bottom:7px;
+    }
+    .auto-row-bot .auto-btn { flex:1; }
+    .auto-row-bot .bpm-step { flex:1; white-space:nowrap; }
     .sound-sel {
       background: var(--surface2); border: 1px solid var(--border);
       color: var(--text); border-radius: 6px; padding: 4px 7px;
@@ -844,12 +852,68 @@
       font-size: 0.84rem; line-height: 1;
     }
     .prompt-close-btn:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── 마디선 ── */
+    .chord-card.bar-start { border-left: 2px solid rgba(255,255,255,0.22); }
+
+    /* ── 카메라 배경 테마 ── */
+    .cam-theme-row { position:absolute; bottom:52px; left:16px; z-index:4; display:flex; gap:6px; }
+    .cam-theme-btn { background:rgba(0,0,0,0.4); border:1.5px solid rgba(255,255,255,0.3); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:1rem; }
+    .cam-theme-btn.active { border-color:#fff; }
+
+    /* ── 카메라 피아노 다이어그램 ── */
+    .cam-piano-wrap { position:absolute; bottom:130px; left:50%; transform:translateX(-50%); z-index:3; opacity:0.88; pointer-events:none; }
+
+    /* ── JSON 내보내기/불러오기 ── */
+    .modal-io-row { display:flex; gap:8px; margin-bottom:10px; }
+    .modal-io-btn { flex:1; padding:8px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); border-radius:8px; color:inherit; cursor:pointer; font-size:0.82rem; text-align:center; }
+
+    /* ── 카메라 필터 ── */
+    .cam-filter-row {
+      position:absolute; top:46px; left:0; right:0; z-index:5;
+      display:flex; gap:5px; justify-content:center;
+      padding:0 10px; overflow-x:auto; scrollbar-width:none;
+    }
+    .cam-filter-row::-webkit-scrollbar { display:none; }
+    .cam-filter-btn {
+      background:rgba(0,0,0,0.52); border:1.5px solid rgba(255,255,255,0.22);
+      border-radius:20px; color:rgba(255,255,255,0.72);
+      padding:4px 11px; cursor:pointer; font-size:0.72rem;
+      white-space:nowrap; flex-shrink:0; transition:all 0.15s;
+    }
+    .cam-filter-btn.active { background:rgba(255,255,255,0.22); border-color:#fff; color:#fff; }
+    .cam-filter-overlay {
+      position:absolute; inset:0; z-index:1; pointer-events:none;
+      opacity:0; mix-blend-mode:overlay;
+      background:rgba(128,128,128,0.6); filter:url(#cam-grain);
+      transition:opacity 0.3s;
+    }
+    .cam-vignette {
+      position:absolute; inset:0; z-index:2; pointer-events:none;
+      background:radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,0.80) 100%);
+      opacity:0; transition:opacity 0.3s;
+    }
+    .cam-rgb-wrap { position:absolute; inset:0; z-index:1; pointer-events:none; }
+    .cam-rgb-wrap.hidden { display:none; }
+    .cam-rgb-layer { position:absolute; inset:0; width:100%; height:100%; mix-blend-mode:screen; }
+    .cam-rgb-r { filter:url(#iso-r); }
+    .cam-rgb-g { filter:url(#iso-g); }
+    .cam-rgb-b { filter:url(#iso-b); }
+    /* 비디오 CSS 필터 클래스 */
+    .cam-flt-film90    { filter:sepia(0.2) contrast(1.1) saturate(0.78) brightness(0.94) !important; }
+    .cam-flt-bw        { filter:grayscale(1) contrast(1.22) brightness(0.90) !important; }
+    .cam-flt-nostalgia { filter:sepia(0.52) contrast(1.08) brightness(0.82) saturate(0.65) !important; }
+    .cam-flt-cinema    { filter:contrast(1.32) saturate(0.60) brightness(0.88) hue-rotate(-8deg) !important; }
+    .cam-flt-lomo      { filter:contrast(1.42) saturate(1.38) brightness(0.82) !important; }
   </style>
 </head>
 <body>
 
   <header>
-    <span class="logo">minsound</span>
+    <div class="header-top">
+      <span class="logo">minsound</span>
+      <span class="logo-sub">코드 연습 도구</span>
+    </div>
     <div class="header-btns">
       <button class="icon-btn" id="helpBtn">❓ 사용법</button>
       <button class="icon-btn" id="aiPromptBtn">🤖 AI변환</button>
@@ -915,15 +979,8 @@
       <button class="act-btn preview-play" id="previewPlayBtn">▶ 듣기</button>
       <button class="act-btn add-btn" id="addBtn">+ 추가</button>
       <button class="act-btn preview-play" id="emptyBtn">— 빈칸</button>
+      <button class="act-btn" id="textInputOpenBtn" style="background:rgba(255,255,255,0.06)">✏️ 텍스트</button>
     </div>
-    <div class="text-code-row">
-      <textarea class="code-text-input" id="codeTextInput" rows="1" placeholder='C Am F#m Bb  /  가사: C"사랑 해요"  /  옥타브: C^2  /  빈칸: -'></textarea>
-      <button class="code-text-btn-sec" id="codeTextExtractBtn">↓ 추출</button>
-      <button class="code-text-btn-sec" id="codeTextHoldBtn">Hold 변환</button>
-      <button class="code-text-btn-sec" id="codeTextMergeLyricsBtn">가사 병합</button>
-      <button class="code-text-btn" id="codeTextAddBtn">입력</button>
-    </div>
-    <div class="code-text-help" id="codeTextHelp">예: C"사랑 해요" Am"그대" F G7  /  샵: F#m  /  플랫: Bb  /  옥타브: C^2  /  빈칸: -</div>
   </div>
 
   <div class="chord-list-section">
@@ -957,21 +1014,28 @@
   </div>
 
   <footer>
-    <div class="auto-row">
+    <div class="auto-row-top">
       <select class="sound-sel" id="soundSel">
         <option value="basic">🔊 기본</option>
         <option value="balladpiano">🎹 피아노 발라드</option>
         <option value="ep1">🎹 일렉 피아노 1 (Rhodes)</option>
         <option value="ep2">🎹 일렉 피아노 2 (Wurlitzer)</option>
+        <option value="strings">🎻 현악 패드</option>
+        <option value="organ">🎹 오르간</option>
       </select>
       <div class="bpm-ctrl">
         <span class="bpm-lbl">BPM</span>
         <button class="bpm-step" id="bpmDown">−</button>
         <input type="number" class="bpm-input" id="bpmInput" min="40" max="240" value="80">
         <button class="bpm-step" id="bpmUp">＋</button>
+        <button class="bpm-step" id="tapBtn">탭</button>
       </div>
+    </div>
+    <div class="auto-row-bot">
       <button class="auto-btn" id="autoPlayBtn">▶ 자동재생</button>
-      <button class="bpm-step" id="resetBtn" title="처음으로">⏮</button>
+      <button class="bpm-step" id="resetBtn" title="처음으로">⏮ 처음</button>
+      <button class="bpm-step loop-btn" id="loopBtn" title="구간 반복">🔁 반복</button>
+      <button class="bpm-step countin-btn" id="countInBtn" title="카운트인">카운트인</button>
     </div>
     <div class="nav-btns">
       <button class="nav-btn" id="backBtn">
@@ -1081,162 +1145,222 @@
     <div class="prompt-modal-box">
       <div class="prompt-modal-head">🤖 악보 → 코드 AI 변환 프롬프트</div>
       <div class="prompt-modal-desc">아래 프롬프트를 복사해서 Claude·ChatGPT 등 AI에 악보 이미지와 함께 붙여넣으세요. 출력된 텍스트를 minsound 입력창에 바로 사용할 수 있습니다.<br><span style="color:var(--muted);font-size:0.78rem">⚠️ AI 코드 변환 결과는 완벽하지 않을 수 있습니다. 직접 확인 후 사용하세요.</span><br><span style="color:#e8a44a;font-size:0.78rem">⏱ 각 슬롯(칸)은 동일한 박자 길이입니다. <b>-</b> 는 앞 코드의 지속을 의미하며, 칸 수로 박자 길이가 결정됩니다. 줄당 칸 수는 화면 배치일 뿐 박자와 무관합니다.</span></div>
-      <div class="prompt-box" id="aiPromptHold">악보 이미지에서 코드 진행을 추출하여 minsound 형식으로 변환해라.
+      <div class="prompt-box" id="aiPromptHold">설명·해설·섹션명 없이 코드 텍스트 한 줄만 출력한다.
 
-## 기본 규칙
-- 악보에 표기된 박자 기호를 그대로 따름 (4/4, 3/4, 6/8 등)
-- 출력은 한 줄만
-- 코드와 박자 단위를 스페이스로 구분
-- 한 박자 = 1 토큰
-- 코드가 시작되는 박자에는 코드명을 출력
-- 같은 코드가 이어지는 나머지 박자는 - 출력
-- 마디선(|)은 출력하지 않음
-- 줄바꿈 금지
-- 코드 표기는 악보 그대로 사용
-- 플랫은 b, 샵은 # 사용
+악보 이미지에서 코드 진행을 추출하여 minsound Hold 형식으로 변환해라.
 
-## 길이 표현 규칙 (마디당 박자 수는 박자 기호에 따라 결정)
+## 출력 형식
+- 한 줄, 스페이스로 토큰 구분, 줄바꿈 없음
+- 코드 시작 박자: 코드명 / 이어지는 박자: -
+- 플랫→b, 샵→#
+- 슬래시 코드(C/G 등)는 앞 코드명만 출력 (C/G → C)
 
-4/4 — 한 마디 전체가 C → C - - -
-3/4 — 한 마디 전체가 C → C - -
-6/8 — 한 마디 전체가 C (2분할) → C -
-2/4 — 한 마디 전체가 C → C -
+## 박자 단위 (1토큰 기준)
+- 4/4: 4분음표 = 마디당 4토큰
+- 3/4: 4분음표 = 마디당 3토큰
+- 2/4: 4분음표 = 마디당 2토큰
+- 2/2 또는 ¢(cut time): 2분음표 = 마디당 2토큰
+- 6/8: 점4분음표(8분음표 3개) = 마디당 2토큰
+- 9/8: 점4분음표 = 마디당 3토큰
+- 12/8: 점4분음표 = 마디당 4토큰
 
-4/4 예시:
-1박자씩: | C | Am | F | G | → C Am F G
-2박자+2박자: | C      | Am     | → C - Am -
-3박자+1박자: | C          | G | → C - - G
+## 처리 절차 (내부 추론용 — 최종 출력에 포함하지 않음)
+1. 박자 기호 확인 → 마디당 토큰 수 결정
+2. 마디를 왼→오 스캔: 코드 기호 위치의 음표 값으로 정확한 박자 번호 계산
+3. 코드가 없는 박자 → 직전 코드 지속(-)
+4. 마디 경계에서 코드 없으면 이전 코드 계속
+5. [검증] 각 마디 토큰 수 = 박자 기호 수인지 확인, 불일치 시 수정
+6. 전체 이어붙여 한 줄 출력
 
-3/4 예시:
-3박자: | C          | → C - -
-2박자+1박자: | C      | G | → C - G
+## 코드 표기 변환
+- 트라이앵글(△ · Δ) → maj7 (예: CΔ7 → Cmaj7)
+- 반원(ø) → m7b5 (예: Cø → Cm7b5)
+- 속음자리(°) → dim (예: C° → Cdim)
+- sus 단독 표기 → sus4
+- 마이너는 소문자 m (Cm, Am 등)
 
-4마디 예시 (4/4):
+## 전체 출력 규칙
+- 인트로부터 아웃트로까지 모든 구간의 코드를 순서대로 포함
+- 섹션 레이블(Verse, Chorus, A, B 등)은 출력하지 않되 해당 구간 코드는 반드시 포함
+- 피아노 대보표: 높은음자리 위의 코드 기호만 사용
+- 픽업마디(불완전첫마디): 실제 박자 수만큼 토큰만 출력
+- N.C.(No Chord) 및 코드 없는 구간: - 처리
+
+## 반복 기호 (연주 순서대로 전개)
+- |: ... :| → 구간 2회 전개
+- 1괄호/2괄호(volta) → 1회차: 1괄호, 2회차: 2괄호
+- D.C. al Fine → 처음→Fine 재전개
+- D.S. al Fine → 𝄋→Fine 재전개
+- D.C./D.S. al Coda → 해당 구간 전개 후 Coda(⊕) 이어붙임
+- 반복 해석 불확실 → 악보에 보이는 순서대로만 전개
+
+## 출력 예시
+4/4 — 마디당 1코드:
 | C       | Am      | F       | G       |
 → C - - - Am - - - F - - - G - - -
 
-## 코드 추출 규칙
-- 코드 위치를 기준으로 실제 점유 박자를 추정
-- 마디 안에서 코드가 바뀌면 남은 박자를 계산하여 - 로 채움
-- 인트로, 벌스, 코러스 등 섹션 표시 무시
-- 가사, 리듬 표기 무시
-- 코드와 박자 정보만 출력
+4/4 — 2박씩:
+| C   Am  | F   G   |
+→ C - Am - F - G -
 
-## 반복 기호 해석 (실제 연주 순서대로 전개)
-- |: ... :| (도돌이표) → 해당 구간을 2번 전개하여 출력
-- 1번/2번 괄호 (volta) → 첫 번째 반복엔 1번 괄호 내용, 두 번째엔 2번 괄호 내용으로 치환
-- D.C. al Fine → 처음부터 Fine 표시까지 한 번 더 전개
-- D.S. al Fine → 세뇨(𝄋) 기호부터 Fine 표시까지 한 번 더 전개
-- D.C. al Coda / D.S. al Coda → 해당 구간 전개 후 Coda(⊕) 구간 이어서 출력
-- 마침마디(||) → 끝 표시만, 반복 없음
+4/4 — 3박+1박:
+| C       Am | F   G   |
+→ C - - Am F - G -
 
-## 옥타브 표기 (선택사항)
-- 기본 옥타브 3 (생략 가능)
-- 악보에서 판단 가능한 경우 코드 뒤에 ^숫자
-- 범위 1~6 (낮음→높음), 예: C^2 Am^4
+3/4 — 2박+1박:
+| C    G  | Am  F   |
+→ C - G Am - F
+
+6/8 — 마디당 1코드 (2토큰):
+| C       | Am      |
+→ C - Am -
 
 코드 텍스트만 출력. 설명 없이.</div>
-      <div class="prompt-box" id="aiPromptSustain" style="display:none">악보 이미지에서 코드 진행을 추출하여 minsound 형식으로 변환해라.
+      <div class="prompt-box" id="aiPromptSustain" style="display:none">설명·해설·섹션명 없이 코드 텍스트 한 줄만 출력한다.
 
-## 기본 규칙
-- 악보에 표기된 박자 기호를 그대로 따름 (4/4, 3/4, 6/8 등)
-- 출력은 한 줄만
-- 코드와 박자 단위를 스페이스로 구분
-- 한 박자 = 1 토큰
-- 코드가 이어지는 박자에도 코드명을 반복 출력
-- 마디선(|)은 출력하지 않음
-- 줄바꿈 금지
-- 코드 표기는 악보 그대로 사용
-- 플랫은 b, 샵은 # 사용
+악보 이미지에서 코드 진행을 추출하여 minsound Sustain 형식으로 변환해라.
 
-## 길이 표현 규칙 (마디당 박자 수는 박자 기호에 따라 결정)
+## 출력 형식
+- 한 줄, 스페이스로 토큰 구분, 줄바꿈 없음
+- 코드가 울리는 모든 박자에 코드명 반복 출력 (- 없음)
+- 플랫→b, 샵→#
+- 슬래시 코드(C/G 등)는 앞 코드명만 출력 (C/G → C)
 
-4/4 — 한 마디 전체가 C → C C C C
-3/4 — 한 마디 전체가 C → C C C
-2/4 — 한 마디 전체가 C → C C
+## 박자 단위 (1토큰 기준)
+- 4/4: 4분음표 = 마디당 4토큰
+- 3/4: 4분음표 = 마디당 3토큰
+- 2/4: 4분음표 = 마디당 2토큰
+- 2/2 또는 ¢(cut time): 2분음표 = 마디당 2토큰
+- 6/8: 점4분음표(8분음표 3개) = 마디당 2토큰
+- 9/8: 점4분음표 = 마디당 3토큰
+- 12/8: 점4분음표 = 마디당 4토큰
 
-4/4 예시:
-1박자씩: | C | Am | F | G | → C Am F G
-2박자+2박자: | C      | Am     | → C C Am Am
-3박자+1박자: | C          | G | → C C C G
+## 처리 절차 (내부 추론용 — 최종 출력에 포함하지 않음)
+1. 박자 기호 확인 → 마디당 토큰 수 결정
+2. 마디별로 코드 기호의 박자 위치를 음표 값으로 계산
+3. 각 코드명을 점유 박자 수만큼 반복 출력
+4. [검증] 각 마디 토큰 수 = 박자 기호 수인지 확인, 불일치 시 수정
+5. 전체 이어붙여 한 줄 출력
 
-4마디 예시 (4/4):
+## 코드 표기 변환
+- 트라이앵글(△ · Δ) → maj7 / 반원(ø) → m7b5 / 속음자리(°) → dim / sus 단독→sus4
+
+## 전체 출력 규칙
+- 인트로부터 아웃트로까지 모든 구간 순서대로 포함
+- 섹션 레이블(Verse, Chorus 등)은 출력 안 하되 해당 구간 코드는 반드시 포함
+- 픽업마디: 실제 박자 수만큼 토큰만 출력
+- N.C.(No Chord) 및 코드 없는 구간: 해당 박자 수만큼 rest 표시 생략 (해당 토큰 위치 채울 코드 없으면 이전 코드 반복)
+
+## 반복 기호 (연주 순서대로 전개)
+- |: ... :| → 2회 / 1·2volta → 각 회차 해당 괄호 / D.C. al Fine → 처음→Fine
+- D.S. al Fine → 𝄋→Fine / D.C./D.S. al Coda → 구간 + Coda(⊕) / 불확실 → 보이는 순서대로
+
+## 출력 예시
+4/4 — 마디당 1코드:
 | C       | Am      | F       | G       |
 → C C C C Am Am Am Am F F F F G G G G
 
-## 코드 추출 규칙
-- 코드 위치를 기준으로 실제 점유 박자를 추정
-- 마디 안에서 코드가 바뀌면 남은 박자를 계산하여 코드명 반복
-- 인트로, 벌스, 코러스 등 섹션 표시 무시
-- 가사, 리듬 표기 무시
-- 코드와 박자 정보만 출력
+4/4 — 2박씩:
+| C   Am  | F   G   |
+→ C C Am Am F F G G
 
-## 반복 기호 해석 (실제 연주 순서대로 전개)
-- |: ... :| (도돌이표) → 해당 구간을 2번 전개하여 출력
-- 1번/2번 괄호 (volta) → 첫 번째 반복엔 1번 괄호 내용, 두 번째엔 2번 괄호 내용으로 치환
-- D.C. al Fine → 처음부터 Fine 표시까지 한 번 더 전개
-- D.S. al Fine → 세뇨(𝄋) 기호부터 Fine 표시까지 한 번 더 전개
-- D.C. al Coda / D.S. al Coda → 해당 구간 전개 후 Coda(⊕) 구간 이어서 출력
-- 마침마디(||) → 끝 표시만, 반복 없음
-
-## 옥타브 표기 (선택사항)
-- 기본 옥타브 3 (생략 가능)
-- 악보에서 판단 가능한 경우 코드 뒤에 ^숫자
-- 범위 1~6 (낮음→높음), 예: C^2 Am^4
+6/8 — 마디당 1코드 (2토큰):
+| C       | Am      |
+→ C C Am Am
 
 코드 텍스트만 출력. 설명 없이.</div>
-      <div class="prompt-box" id="aiPromptSimple" style="display:none">악보 이미지에서 코드 진행을 추출하여 순서대로 나열해라.
+      <div class="prompt-box" id="aiPromptSimple" style="display:none">설명·해설·섹션명 없이 코드 텍스트 한 줄만 출력한다.
 
-## 규칙
-- 코드가 바뀔 때만 한 번씩 출력 (박자·길이 무시)
-- 스페이스로 구분, 한 줄 출력
-- 마디선, 가사, 섹션 표시 무시
-- 코드 표기는 악보 그대로 사용
-- 플랫은 b, 샵은 # 사용
-- 옥타브 필요시 코드 뒤에 ^숫자 (범위 1~6, 기본 3)
+악보 이미지에서 코드 진행을 추출하여 변화 순서대로 나열해라.
 
-## 반복 기호 해석 (실제 연주 순서대로 전개)
-- |: ... :| (도돌이표) → 해당 구간 코드를 2번 전개
-- 1번/2번 괄호 (volta) → 첫 번째 반복엔 1번 괄호, 두 번째엔 2번 괄호로 치환
-- D.C. al Fine → 처음부터 Fine까지 한 번 더 전개
-- D.S. al Fine → 세뇨(𝄋)부터 Fine까지 한 번 더 전개
-- D.C./D.S. al Coda → 해당 구간 전개 후 Coda(⊕) 이어서 출력
-- 마침마디(||) → 끝 표시만, 반복 없음
+## 출력 규칙
+- 코드가 바뀔 때마다 한 번씩만 출력 (박자·길이 무시)
+- 스페이스로 구분, 한 줄 출력, 줄바꿈 없음
+- 마디선, 가사, 섹션 레이블 출력 안 함
+- 플랫→b, 샵→#
+- 슬래시 코드(C/G)는 앞 코드명만 출력 (C/G → C)
+- 트라이앵글(△·Δ)→maj7 / 반원(ø)→m7b5 / 속음자리(°)→dim / sus 단독→sus4
+
+## 전체 출력
+- 인트로부터 아웃트로까지 모든 섹션 순서대로 포함
+- 섹션 레이블(Verse, Chorus 등)은 출력 안 하되 해당 구간 코드는 반드시 포함
+- N.C.(No Chord) 구간 → 생략 (코드 없음)
+
+## 반복 기호 (연주 순서대로 전개)
+- |: ... :| → 구간 2회 전개
+- 1괄호/2괄호(volta) → 1회차: 1괄호, 2회차: 2괄호
+- D.C. al Fine → 처음→Fine 재전개
+- D.S. al Fine → 𝄋→Fine 재전개
+- D.C./D.S. al Coda → 해당 구간 전개 후 Coda(⊕) 이어붙임
+- 반복 해석 불확실 → 보이는 순서대로만 전개
 
 ## 출력 예시
 C Am F G
+E C#m A B
 
 코드 텍스트만 출력. 설명 없이.</div>
-      <div class="prompt-box" id="aiPromptLyrics" style="display:none">악보 이미지에서 코드와 가사를 함께 추출하여 minsound 형식으로 변환해라.
+      <div class="prompt-box" id="aiPromptLyrics" style="display:none">설명·해설·섹션명 없이 코드"가사" 텍스트 한 줄만 출력한다.
+
+악보 이미지에서 코드와 가사를 함께 추출하여 minsound Lyrics 형식으로 변환해라.
 
 ## 출력 형식
-- 한 줄 출력, 스페이스로 토큰 구분
-- 한 박자 = 1 토큰 (악보의 박자 기호 기준 — 4/4, 3/4, 6/8 등 그대로 따름)
-- 코드가 시작되는 박자: 코드명"가사" 형식 (따옴표 안에 해당 코드 구간 가사 전체)
-- 같은 코드가 이어지는 박자: - 출력
-- 가사 없는 코드(인트로·간주)는 코드명만 출력 (따옴표 생략)
-- 플랫은 b, 샵은 # 사용
-- 마디선, 반복기호, 섹션 표시 무시
+- 한 줄, 스페이스로 토큰 구분, 줄바꿈 없음
+- 코드 시작 박자: 코드명"가사" (따옴표 안에 해당 코드 구간의 가사 전체)
+- 코드 이어지는 박자: -
+- 가사 없는 구간(인트로·간주): 코드명만 (따옴표 생략)
+- 플랫→b, 샵→#
+- 슬래시 코드(C/G)는 앞 코드명만 출력 (C/G → C)
 
-## 박자 길이 표현
-한 마디 전체 C(사랑해) → C"사랑해" - - -
-2박자씩: | C(사랑) Am(해요) | → C"사랑" - Am"해요" -
-1박자씩: | C(사) Am(랑) F(해) G(요) | → C"사" Am"랑" F"해" G"요"
-가사 없는 간주 2마디: | C | Am | → C - - - Am - - -
+## 박자 단위 (1토큰 기준)
+- 4/4: 4분음표 = 마디당 4토큰
+- 3/4: 4분음표 = 마디당 3토큰
+- 2/4: 4분음표 = 마디당 2토큰
+- 2/2 또는 ¢(cut time): 2분음표 = 마디당 2토큰
+- 6/8: 점4분음표(8분음표 3개) = 마디당 2토큰
+- 9/8: 점4분음표 = 마디당 3토큰 / 12/8 = 마디당 4토큰
 
-## 가사 배정 규칙
-- 해당 코드가 울리는 구간에 걸친 모든 음절을 이어붙여 따옴표 안에 담음
-  예: C가 2박자 동안 "사랑 해요"면 → C"사랑 해요" -
-- 음절이 코드 경계에 걸치면 더 가까운 코드에 배정
-- 옥타브 필요시 코드명^숫자"가사" 형식 (예: C^2"사랑")
+## 처리 절차 (내부 추론용 — 최종 출력에 포함하지 않음)
+1. 박자 기호 확인 → 마디당 토큰 수 결정
+2. 마디를 왼→오 스캔: 코드 시작 박자 번호를 음표 값으로 계산
+3. 각 코드 구간의 가사를 이어붙여 따옴표 안에 배정
+4. 코드 없는 박자 → - / 가사 없는 코드 → 따옴표 생략
+5. [검증] 각 마디 토큰 수 = 박자 기호 수인지 확인, 불일치 시 수정
+6. 전체 이어붙여 한 줄 출력
 
-## 반복 기호 해석 (실제 연주 순서대로 전개)
-- |: ... :| (도돌이표) → 해당 구간을 2번 전개 (가사도 함께 반복)
-- 1번/2번 괄호 (volta) → 첫 번째 반복엔 1번 괄호, 두 번째엔 2번 괄호로 치환
-- D.C. al Fine → 처음부터 Fine까지 한 번 더 전개
-- D.S. al Fine → 세뇨(𝄋)부터 Fine까지 한 번 더 전개
-- D.C./D.S. al Coda → 해당 구간 전개 후 Coda(⊕) 이어서 출력
-- 마침마디(||) → 끝 표시만, 반복 없음
+## 가사 배정 상세 규칙
+- 코드가 울리는 구간의 음절 전부를 이어붙여 따옴표 안에 담음
+- 멜리스마(한 음절이 여러 음표): 그 음절이 시작된 코드에 배정
+- 음절이 코드 경계에 정확히 걸치면 → 더 긴 구간의 코드에 배정
+- Verse 2, 3 등 반복 구간: 해당 가사로 교체하여 동일한 구조로 출력
+
+## 코드 표기 변환
+- 트라이앵글(△·Δ)→maj7 / 반원(ø)→m7b5 / 속음자리(°)→dim / sus 단독→sus4
+
+## 전체 출력 규칙
+- 인트로부터 아웃트로까지 모든 구간 순서대로 포함
+- 섹션 레이블(Verse, Chorus 등)은 출력 안 하되 해당 구간 코드+가사는 반드시 포함
+- 픽업마디: 실제 박자 수만큼만 토큰 출력
+- N.C.(No Chord) 구간 → - 처리
+
+## 반복 기호 (연주 순서대로 전개)
+- |: ... :| → 구간 2회 전개 (가사도 함께)
+- 1괄호/2괄호(volta) → 1회차: 1괄호, 2회차: 2괄호
+- D.C. al Fine → 처음→Fine 재전개 / D.S. al Fine → 𝄋→Fine
+- D.C./D.S. al Coda → 구간 전개 후 Coda(⊕) 이어붙임
+- 반복 해석 불확실 → 보이는 순서대로만 전개
+
+## 출력 예시
+4/4 — 2박씩 (가사 있음):
+| C(사랑하기) Am(때문에) | F(오늘도) G(설레여) |
+→ C"사랑하기" - Am"때문에" - F"오늘도" - G"설레여" -
+
+4/4 — 마디당 1코드:
+| C(사랑해) | Am(그대) |
+→ C"사랑해" - - - Am"그대" - - -
+
+4/4 — 간주 (가사 없음):
+| C | Am | F | G |
+→ C - - - Am - - - F - - - G - - -
 
 코드"가사" 텍스트만 출력. 설명 없이.</div>
       <div class="prompt-modal-btns">
@@ -1255,6 +1379,10 @@ C Am F G
     <div class="modal-box">
       <div class="modal-head">📁 프로젝트</div>
       <div id="saveSlotList"></div>
+      <div class="modal-io-row">
+        <button class="modal-io-btn" id="exportJsonBtn">📤 내보내기</button>
+        <label class="modal-io-btn" for="importJsonFile">📥 불러오기<input type="file" id="importJsonFile" accept=".json" style="display:none"></label>
+      </div>
       <div class="modal-new">
         <input type="text" id="saveNameInput" placeholder="프로젝트 이름..." maxlength="40">
         <button class="modal-save-btn" id="saveNewBtn">💾 저장</button>
@@ -1263,9 +1391,47 @@ C Am F G
     </div>
   </div>
 
+  <!-- 텍스트 입력 팝업 -->
+  <div class="modal-overlay hidden" id="textInputModal">
+    <div class="modal-box" style="max-width:520px;width:92vw">
+      <div class="modal-head">✏️ 텍스트로 코드/가사 입력</div>
+      <textarea class="code-text-input" id="codeTextInput" rows="4" placeholder='C Am F#m Bb  /  가사: C"사랑 해요"  /  옥타브: C^2  /  빈칸: -' style="width:100%;box-sizing:border-box;margin-bottom:8px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:0.85rem;resize:vertical"></textarea>
+      <div class="code-text-help" id="codeTextHelp" style="margin-bottom:10px">예: C"사랑 해요" Am"그대" F G7 / 샵: F#m / 플랫: Bb / 옥타브: C^2 / 빈칸: -</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="code-text-btn-sec" id="codeTextExtractBtn">↓ 추출</button>
+        <button class="code-text-btn-sec" id="codeTextHoldBtn">Hold 변환</button>
+        <button class="code-text-btn-sec" id="codeTextMergeLyricsBtn">가사 병합</button>
+        <button class="code-text-btn" id="codeTextAddBtn" style="flex:1;margin-left:auto">입력</button>
+      </div>
+      <button class="modal-close" id="textInputModalCloseBtn">✕ 닫기</button>
+    </div>
+  </div>
+
+  <!-- SVG 필터 정의 (숨김) -->
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="cam-grain" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" id="grainTurbulence" seed="0"/>
+        <feColorMatrix type="saturate" values="0"/>
+      </filter>
+      <filter id="iso-r"><feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>
+      <filter id="iso-g"><feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter>
+      <filter id="iso-b"><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"/></filter>
+    </defs>
+  </svg>
+
   <!-- 카메라 오버레이 -->
   <div class="cam-overlay hidden" id="camOverlay">
     <video class="cam-video" id="camVideo" autoplay playsinline muted></video>
+    <!-- 필터 오버레이 (grain, vignette, rgb 잔상) -->
+    <div class="cam-filter-overlay" id="camFilterOverlay"></div>
+    <div class="cam-vignette" id="camVignette"></div>
+    <div class="cam-rgb-wrap hidden" id="camRgbWrap">
+      <canvas class="cam-rgb-layer" id="camVideoCanvas"></canvas>
+      <canvas class="cam-rgb-layer cam-rgb-r" id="camTrailR" style="transform:translateX(7px)"></canvas>
+      <canvas class="cam-rgb-layer cam-rgb-g" id="camTrailG"></canvas>
+      <canvas class="cam-rgb-layer cam-rgb-b" id="camTrailB" style="transform:translateX(-7px)"></canvas>
+    </div>
     <div class="cam-grad-top"></div>
     <div class="cam-grad-bot"></div>
     <div class="cam-top-bar">minsound</div>
@@ -1283,6 +1449,23 @@ C Am F G
       <div class="cam-lyrics-next" id="camLyricsNext"></div>
     </div>
     <button class="cam-lyrics-toggle" id="camLyricsToggle">가사 OFF</button>
+    <div class="cam-piano-wrap" id="camPianoWrap" style="display:none"></div>
+    <button class="cam-lyrics-toggle" id="camPianoToggle" style="bottom:108px;right:16px">피아노 OFF</button>
+    <div class="cam-filter-row" id="camFilterRow">
+      <button class="cam-filter-btn active" data-filter="none">없음</button>
+      <button class="cam-filter-btn" data-filter="film90">📽 필름</button>
+      <button class="cam-filter-btn" data-filter="bw">흑백</button>
+      <button class="cam-filter-btn" data-filter="nostalgia">노스탤지어</button>
+      <button class="cam-filter-btn" data-filter="cinema">시네마</button>
+      <button class="cam-filter-btn" data-filter="lomo">로모</button>
+      <button class="cam-filter-btn" data-filter="videoart">📼 비디오아트</button>
+    </div>
+    <div class="cam-theme-row" id="camThemeRow">
+      <button class="cam-theme-btn active" data-theme="black">⬛</button>
+      <button class="cam-theme-btn" data-theme="white">⬜</button>
+      <button class="cam-theme-btn" data-theme="dark">🟦</button>
+      <button class="cam-theme-btn" data-theme="green">🟩</button>
+    </div>
     <div class="cam-controls">
       <button class="cam-exit-btn" id="camResetBtn">⏮ 처음</button>
       <button class="cam-exit-btn" id="camExitBtn">✕ 나가기</button>
@@ -1381,6 +1564,23 @@ let dragJustFinished = false;
 // ── 가사 ──
 let lyricsVisible = false;
 let camLyricsOn = false;
+
+// ── 구간 반복 ──
+let loopEnabled = false;
+
+// ── 탭 템포 ──
+let tapTimes = [];
+
+// ── 카운트인 ──
+let countInEnabled = false;
+let countSynth = null;
+
+// ── 카메라 배경 테마 ──
+let camBgTheme = 'black';
+const CAM_THEMES = { black:'#000', white:'#fff', dark:'#0a1a2e', green:'#00b140' };
+
+// ── 카메라 피아노 ──
+let camPianoOn = false;
 
 // ── 사운드 / 자동재생 ──
 let currentSound = 'basic';
@@ -1486,6 +1686,8 @@ function playSoundFrom(root, acc, oct, quality, inv, hits = 1) {
     playEP(currentSound, root, acc, oct, quality, inv, hits);
     return;
   }
+  if (currentSound === 'strings') { playStrings(root, acc, oct, quality, inv, hits); return; }
+  if (currentSound === 'organ') { playOrgan(root, acc, oct, quality, inv, hits); return; }
   const freqs = getChordFreqs(root, acc, oct, quality, inv);
   chordOscs.forEach((o, i) => o.frequency.rampTo(freqs[i % freqs.length], 0.04));
   chordGain.gain.rampTo(0.5 / NUM_OSCS, 0.07);
@@ -1494,6 +1696,8 @@ function playSoundFrom(root, acc, oct, quality, inv, hits = 1) {
 function stopSound() {
   if (!audioReady) return;
   chordGain.gain.rampTo(0, 0.14);
+  if (currentSound === 'strings' && stringsPoly) { stringsPoly.releaseAll(); lastStringsNotes = []; }
+  if (currentSound === 'organ' && organPoly) { organPoly.releaseAll(); lastOrganNotes = []; }
 }
 
 // ── 피아노 발라드 악기 (Salamander Grand Piano) ──
@@ -1638,6 +1842,72 @@ function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
       balladPoly.triggerAttackRelease(note, noteDur * 0.96, ht + SPREAD * (ni + 1), cv);
     });
   }
+}
+
+// ── 카운트인 신스 ──
+function ensureCountSynth() {
+  if (countSynth) return;
+  countSynth = new Tone.Synth({
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 0.001, decay: 0.07, sustain: 0, release: 0.05 }
+  });
+  countSynth.volume.value = -8;
+  countSynth.toDestination();
+}
+
+function playCountClick(accent) {
+  ensureCountSynth();
+  countSynth.triggerAttackRelease(accent ? 'C6' : 'G5', '32n', Tone.now());
+}
+
+// ── 현악 패드 ──
+let stringsPoly = null, lastStringsNotes = [];
+function ensureStringsSynth() {
+  if (stringsPoly) return;
+  const rv = new Tone.Reverb({ decay: 3.5, wet: 0.45 }); rv.connect(Tone.Destination);
+  const chorus = new Tone.Chorus(3, 2.5, 0.5); chorus.connect(rv);
+  const lim = new Tone.Limiter(-4); lim.connect(chorus);
+  const g = new Tone.Gain(0.55); g.connect(lim);
+  stringsPoly = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'sawtooth' },
+    envelope: { attack: 0.65, decay: 0.3, sustain: 0.85, release: 2.5 },
+  });
+  stringsPoly.connect(g);
+}
+function playStrings(root, acc, oct, quality, inv, hits = 1) {
+  ensureStringsSynth();
+  stringsPoly.releaseAll(Tone.now()); lastStringsNotes = [];
+  const midiNotes = getChordMidi(root, acc, oct, quality, inv);
+  const noteNames = midiNotes.map(midiToNoteName);
+  const barDur = (60 / getAutoBpm()) * 4;
+  const now = Tone.now() + 0.05;
+  noteNames.forEach((n, i) => stringsPoly.triggerAttackRelease(n, barDur * 1.3, now, i === 0 ? 0.62 : 0.52));
+  lastStringsNotes = noteNames;
+}
+
+// ── 오르간 ──
+let organPoly = null, lastOrganNotes = [];
+function ensureOrganSynth() {
+  if (organPoly) return;
+  const rv = new Tone.Reverb({ decay: 1.8, wet: 0.22 }); rv.connect(Tone.Destination);
+  const chorus = new Tone.Chorus(1.5, 3.5, 0.3); chorus.connect(rv);
+  const lim = new Tone.Limiter(-4); lim.connect(chorus);
+  const g = new Tone.Gain(0.48); g.connect(lim);
+  organPoly = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'square' },
+    envelope: { attack: 0.008, decay: 0.01, sustain: 1.0, release: 0.07 },
+  });
+  organPoly.connect(g);
+}
+function playOrgan(root, acc, oct, quality, inv, hits = 1) {
+  ensureOrganSynth();
+  organPoly.releaseAll(Tone.now()); lastOrganNotes = [];
+  const midiNotes = getChordMidi(root, acc, oct, quality, inv);
+  const noteNames = midiNotes.map(midiToNoteName);
+  const barDur = (60 / getAutoBpm()) * 4;
+  const now = Tone.now() + 0.02;
+  noteNames.forEach((n, i) => organPoly.triggerAttackRelease(n, barDur * 1.05, now, i === 0 ? 0.65 : 0.55));
+  lastOrganNotes = noteNames;
 }
 
 // ── 라벨 ──
@@ -1888,6 +2158,18 @@ function cloneChord(c) {
   return c === null ? null : JSON.parse(JSON.stringify(c));
 }
 
+function fitCamLyrics() {
+  const el = document.getElementById('camLyricsText');
+  if (!el) return;
+  el.style.fontSize = '';
+  const maxW = (el.parentElement ? el.parentElement.clientWidth : window.innerWidth) * 0.46;
+  let fs = parseFloat(window.getComputedStyle(el).fontSize) || 20;
+  while (el.scrollWidth > maxW && fs > 9) {
+    fs -= 1;
+    el.style.fontSize = fs + 'px';
+  }
+}
+
 let _lyricsAnimTimer = null;
 function animateLyricsText(el, newText) {
   if (!el) return;
@@ -1899,6 +2181,7 @@ function animateLyricsText(el, newText) {
     el.textContent = newText;
     void el.offsetWidth;
     el.classList.add('lyric-slide-in');
+    fitCamLyrics();
     return;
   }
   el.classList.remove('lyric-slide-in');
@@ -1909,6 +2192,7 @@ function animateLyricsText(el, newText) {
     el.classList.remove('lyric-slide-out');
     void el.offsetWidth;
     el.classList.add('lyric-slide-in');
+    fitCamLyrics();
   }, 140);
 }
 
@@ -2173,16 +2457,17 @@ function renderChordList() {
 
       const card = document.createElement('div');
       card.dataset.idx = i;
+      const barStartClass = (chordsPerRow > 0 && i === rowStart) ? ' bar-start' : '';
 
       if (c === null) {
-        card.className = 'chord-card empty-card' + (isSelected ? ' selected' : '');
+        card.className = 'chord-card empty-card' + barStartClass + (isSelected ? ' selected' : '');
         card.innerHTML = `
           <span class="card-num">${i + 1}</span>
           <span class="card-name">—</span>
           <button class="del-btn" title="삭제">×</button>
         `;
       } else {
-        card.className = 'chord-card' + breakClass + (isActive ? ' active' : '') + (isNext ? ' next-up' : '') + (isSelected ? ' selected' : '');
+        card.className = 'chord-card' + barStartClass + breakClass + (isActive ? ' active' : '') + (isNext ? ' next-up' : '') + (isSelected ? ' selected' : '');
         if (isActive) {
           card.style.borderColor = c.color;
           card.style.backgroundColor = c.color + '20';
@@ -2385,7 +2670,10 @@ document.getElementById('codeTextExtractBtn').addEventListener('click', () => {
   document.getElementById('codeTextHelp').classList.remove('error');
 });
 
-document.getElementById('codeTextAddBtn').addEventListener('click', addTextChords);
+document.getElementById('codeTextAddBtn').addEventListener('click', () => {
+  addTextChords();
+  document.getElementById('textInputModal').classList.add('hidden');
+});
 document.getElementById('codeTextHoldBtn').addEventListener('click', () => {
   const input = document.getElementById('codeTextInput');
   const tokens = input.value.trim().split(/[\s,]+/);
@@ -2402,7 +2690,21 @@ document.getElementById('codeTextInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     addTextChords();
+    document.getElementById('textInputModal').classList.add('hidden');
   }
+});
+
+// ── 텍스트 입력 팝업 ──
+document.getElementById('textInputOpenBtn').addEventListener('click', () => {
+  document.getElementById('textInputModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('codeTextInput').focus(), 50);
+});
+document.getElementById('textInputModalCloseBtn').addEventListener('click', () => {
+  document.getElementById('textInputModal').classList.add('hidden');
+});
+document.getElementById('textInputModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('textInputModal'))
+    document.getElementById('textInputModal').classList.add('hidden');
 });
 
 document.getElementById('emptyBtn').addEventListener('click', () => {
@@ -2495,7 +2797,15 @@ function autoPlayStep() {
     if (!autoPlayActive) return;
     if (currentSound === 'basic') stopSound();
     isSpaceHeld = false;
-    currentIdx = (idx + slotCount) % chords.length;
+    let nextIdx = idx + slotCount;
+    if (loopEnabled) {
+      const range = getSelectionRange();
+      if (range && nextIdx > range.end) nextIdx = range.start;
+      else nextIdx = nextIdx % chords.length;
+    } else {
+      nextIdx = nextIdx % chords.length;
+    }
+    currentIdx = nextIdx;
     renderChordList(); updateCamDisplay();
     autoPlayTimer = queueAutoTimer(() => { if (autoPlayActive) autoPlayStep(); }, 80);
   }, Math.max(200, totalMs - 80));
@@ -2510,7 +2820,16 @@ function startAutoPlay() {
     document.getElementById('autoPlayBtn').classList.add('active');
     document.getElementById('autoPlayBtn').textContent = '⏹ 자동재생 중';
     if (currentIdx < 0 || currentIdx >= chords.length) currentIdx = -1;
-    autoPlayStep();
+    if (countInEnabled) {
+      const beats = chordsPerRow > 0 ? chordsPerRow : 4;
+      const beatMs = (60 / getAutoBpm()) * 1000;
+      for (let b = 0; b < beats; b++) {
+        queueAutoTimer(() => { playCountClick(b === 0); }, b * beatMs);
+      }
+      queueAutoTimer(() => { if (autoPlayActive) autoPlayStep(); }, beats * beatMs);
+    } else {
+      autoPlayStep();
+    }
   });
 }
 
@@ -2603,6 +2922,13 @@ function onRelease() {
   btn.textContent = 'SPACE';
 }
 
+function updateChordDerived(idx) {
+  const c = chords[idx];
+  if (!c) return;
+  c.label = buildLabel(c.root, c.acc, c.quality);
+  c.color = QUALITY_COLORS[c.quality] || '#4a90d9';
+}
+
 window.addEventListener('keydown', e => {
   const key = e.key.toLowerCase();
   if (e.ctrlKey || e.metaKey) {
@@ -2612,6 +2938,48 @@ window.addEventListener('keydown', e => {
     if (key === 'v') { if (pasteChordBox()) e.preventDefault(); return; }
   }
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  // Shift+A~G: 현재 코드 근음 변경
+  const rootMap = { a:'A', b:'B', c:'C', d:'D', e:'E', f:'F', g:'G' };
+  if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.repeat && rootMap[key] && currentIdx >= 0 && currentIdx < chords.length && chords[currentIdx]) {
+    e.preventDefault();
+    saveHistory();
+    chords[currentIdx].root = rootMap[key];
+    chords[currentIdx].acc = '';
+    updateChordDerived(currentIdx);
+    renderChordList();
+    updateCamDisplay();
+    return;
+  }
+
+  // m: maj↔m, maj7↔m7 토글
+  if (key === 'm' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.repeat && currentIdx >= 0 && currentIdx < chords.length && chords[currentIdx]) {
+    e.preventDefault();
+    const c = chords[currentIdx];
+    const toggleMap = { maj:'m', m:'maj', maj7:'m7', m7:'maj7' };
+    if (toggleMap[c.quality]) {
+      saveHistory();
+      c.quality = toggleMap[c.quality];
+      updateChordDerived(currentIdx);
+      renderChordList();
+      updateCamDisplay();
+    }
+    return;
+  }
+
+  // 7: 7th 토글
+  if (key === '7' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.repeat && currentIdx >= 0 && currentIdx < chords.length && chords[currentIdx]) {
+    e.preventDefault();
+    const c = chords[currentIdx];
+    const toggleMap7 = { maj:'maj7', m:'m7', maj7:'maj', m7:'m', '7':'maj' };
+    saveHistory();
+    c.quality = toggleMap7[c.quality] !== undefined ? toggleMap7[c.quality] : '7';
+    updateChordDerived(currentIdx);
+    renderChordList();
+    updateCamDisplay();
+    return;
+  }
+
   if (e.code === 'Space' || e.code === 'ArrowDown') {
     e.preventDefault(); if (!e.repeat) onPress();
   } else if (e.code === 'Delete') {
@@ -2619,8 +2987,8 @@ window.addEventListener('keydown', e => {
   } else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft' || e.code === 'Backspace') {
     e.preventDefault();
     if (!e.repeat) { e.code === 'ArrowRight' ? goForward() : goBack(); }
-  } else if (key === 'f' && !e.repeat) { e.preventDefault(); goForward(); }
-  else if (key === 'd' && !e.repeat) { e.preventDefault(); goBack(); }
+  } else if (key === 'f' && !e.shiftKey && !e.repeat) { e.preventDefault(); goForward(); }
+  else if (key === 'd' && !e.shiftKey && !e.repeat) { e.preventDefault(); goBack(); }
 });
 window.addEventListener('keyup', e => {
   if (e.code === 'Space' || e.code === 'ArrowDown') { e.preventDefault(); onRelease(); }
@@ -2870,6 +3238,41 @@ document.getElementById('saveNameInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('saveNewBtn').click();
 });
 
+// ── 카메라 배경 테마 ──
+function applyCamTheme(theme) {
+  camBgTheme = theme;
+  const overlay = document.getElementById('camOverlay');
+  if (overlay) overlay.style.background = CAM_THEMES[theme] || '#000';
+  document.querySelectorAll('.cam-theme-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === theme);
+  });
+}
+
+// ── 카메라 피아노 다이어그램 ──
+function buildPianoSVG(pitchClasses) {
+  const wW = 30, wH = 70, bW = 18, bH = 42;
+  const whitePC = [0, 2, 4, 5, 7, 9, 11];
+  const blackDefs = [
+    { wIdx: 0, pc: 1 }, { wIdx: 1, pc: 3 },
+    { wIdx: 3, pc: 6 }, { wIdx: 4, pc: 8 }, { wIdx: 5, pc: 10 }
+  ];
+  const totalW = whitePC.length * wW;
+  let whites = '';
+  whitePC.forEach((pc, i) => {
+    const active = pitchClasses.has(pc);
+    const fill = active ? '#4a90d9' : 'rgba(240,240,240,0.95)';
+    whites += `<rect x="${i * wW}" y="0" width="${wW - 1}" height="${wH}" fill="${fill}" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>`;
+  });
+  let blacks = '';
+  blackDefs.forEach(({ wIdx, pc }) => {
+    const active = pitchClasses.has(pc);
+    const fill = active ? '#2060b0' : 'rgba(20,20,20,0.92)';
+    const x = wIdx * wW + (wW - bW / 2) - bW / 2 + wW * 0.65 - wW * 0.65 + wW * 0.65;
+    blacks += `<rect x="${wIdx * wW + wW - bW / 2}" y="0" width="${bW}" height="${bH}" fill="${fill}" stroke="rgba(0,0,0,0.5)" stroke-width="1" rx="2"/>`;
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${wH}" width="${totalW}" height="${wH}">${whites}${blacks}</svg>`;
+}
+
 // ── 카메라 ──
 let _camStream = null, _wakeLock = null;
 
@@ -2900,7 +3303,21 @@ function updateCamDisplay() {
   const ni2 = cur >= 0 ? nextRealIdx(cur) : -1;
   if (lyricsPrevEl) lyricsPrevEl.textContent = (pi2 >= 0 && pi2 !== cur && chords[pi2]) ? (chords[pi2].lyrics || '') : '';
   animateLyricsText(lyricsTextEl, (cur >= 0 && chords[cur]) ? (chords[cur].lyrics || '') : '');
+  fitCamLyrics();
   if (lyricsNextEl) lyricsNextEl.textContent  = (ni2 >= 0 && ni2 !== cur && chords[ni2]) ? (chords[ni2].lyrics || '') : '';
+
+  // 카메라 피아노 다이어그램
+  const pianoWrap = document.getElementById('camPianoWrap');
+  if (pianoWrap) {
+    if (camPianoOn && cur >= 0 && chords[cur]) {
+      const c2 = chords[cur];
+      const midiNotes = getChordMidi(c2.root, c2.acc, c2.oct, c2.quality, c2.inv);
+      const pitchClasses = new Set(midiNotes.map(n => ((n % 12) + 12) % 12));
+      pianoWrap.innerHTML = buildPianoSVG(pitchClasses);
+    } else {
+      pianoWrap.innerHTML = '';
+    }
+  }
 
   if ((isSpaceHeld || autoPlayActive) && cur !== -1) {
     const c = chords[cur];
@@ -3013,6 +3430,261 @@ document.getElementById('copySustainBtn').addEventListener('click', () =>
   copyPrompt('copySustainBtn', 'aiPromptSustain', '📋 Sustain<br><span class="copy-sub">(반복)</span>'));
 document.getElementById('copyLyricsBtn').addEventListener('click', () =>
   copyPrompt('copyLyricsBtn', 'aiPromptLyrics', '📋 가사+코드<br><span class="copy-sub">(코드"가사")</span>'));
+
+// ── 구간 반복 ──
+document.getElementById('loopBtn').addEventListener('click', () => {
+  loopEnabled = !loopEnabled;
+  document.getElementById('loopBtn').classList.toggle('active', loopEnabled);
+});
+
+// ── 탭 템포 ──
+function tapTempo() {
+  const now = Date.now();
+  if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) {
+    tapTimes = [];
+  }
+  tapTimes.push(now);
+  if (tapTimes.length > 8) tapTimes = tapTimes.slice(-8);
+  if (tapTimes.length >= 2) {
+    const intervals = [];
+    for (let i = 1; i < tapTimes.length; i++) {
+      intervals.push(tapTimes[i] - tapTimes[i - 1]);
+    }
+    const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const bpm = Math.round(60000 / avg);
+    setAutoBpm(bpm);
+  }
+}
+document.getElementById('tapBtn').addEventListener('click', () => {
+  ensureAudio().then(tapTempo);
+});
+
+// ── 카운트인 ──
+document.getElementById('countInBtn').addEventListener('click', () => {
+  countInEnabled = !countInEnabled;
+  document.getElementById('countInBtn').classList.toggle('active', countInEnabled);
+});
+
+// ── 카메라 배경 테마 ──
+document.getElementById('camThemeRow').addEventListener('click', e => {
+  const btn = e.target.closest('.cam-theme-btn');
+  if (btn) applyCamTheme(btn.dataset.theme);
+});
+
+// ── 카메라 필터 ──
+const CAM_FILTER_DEFS = {
+  none:      { cls: '',                  grain: 0,    vig: 0    },
+  film90:    { cls: 'cam-flt-film90',    grain: 0.13, vig: 0.48 },
+  bw:        { cls: 'cam-flt-bw',        grain: 0.11, vig: 0.38 },
+  nostalgia: { cls: 'cam-flt-nostalgia', grain: 0.18, vig: 0.62 },
+  cinema:    { cls: 'cam-flt-cinema',    grain: 0,    vig: 0.70 },
+  lomo:      { cls: 'cam-flt-lomo',      grain: 0,    vig: 0.80 },
+  videoart:  { cls: '',                  grain: 0,    vig: 0    },
+};
+let currentCamFilter = 'none';
+let grainFrame = null, grainSeed = 0;
+let videoArtFrame = null;
+let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
+let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null;
+let _tmpCtx = null, _prevCtx = null, _diffCtx = null;
+
+function animateGrain() {
+  grainSeed = (grainSeed + 1) % 100;
+  const t = document.getElementById('grainTurbulence');
+  if (t) t.setAttribute('seed', grainSeed);
+  grainFrame = requestAnimationFrame(animateGrain);
+}
+function stopGrain() {
+  if (grainFrame) { cancelAnimationFrame(grainFrame); grainFrame = null; }
+}
+
+function initVideoArtCanvases() {
+  const video = document.getElementById('camVideo');
+  const W = Math.min(video.videoWidth || 640, 480);
+  const H = video.videoHeight && video.videoWidth
+    ? Math.round(W * video.videoHeight / video.videoWidth) : 270;
+
+  ['camVideoCanvas','camTrailR','camTrailG','camTrailB'].forEach(id => {
+    const c = document.getElementById(id);
+    if (c) { c.width = W; c.height = H; }
+  });
+  _vidCtx = document.getElementById('camVideoCanvas').getContext('2d');
+  _rCtx   = document.getElementById('camTrailR').getContext('2d');
+  _gCtx   = document.getElementById('camTrailG').getContext('2d');
+  _bCtx   = document.getElementById('camTrailB').getContext('2d');
+
+  // Off-DOM 작업 캔버스
+  _tmpCanvas  = Object.assign(document.createElement('canvas'), {width:W, height:H});
+  _prevCanvas = Object.assign(document.createElement('canvas'), {width:W, height:H});
+  _diffCanvas = Object.assign(document.createElement('canvas'), {width:W, height:H});
+  _tmpCtx  = _tmpCanvas.getContext('2d');
+  _prevCtx = _prevCanvas.getContext('2d');
+  _diffCtx = _diffCanvas.getContext('2d');
+
+  document.getElementById('camRgbWrap').classList.remove('hidden');
+}
+
+function renderVideoArtFrame() {
+  const video = document.getElementById('camVideo');
+  if (!_vidCtx || !_tmpCtx || video.readyState < 2) {
+    videoArtFrame = requestAnimationFrame(renderVideoArtFrame); return;
+  }
+  const W = _tmpCanvas.width, H = _tmpCanvas.height;
+  const shift = Math.max(3, Math.round(W * 0.013));
+
+  // 1. 현재 프레임 (미러) → tmpCanvas
+  _tmpCtx.save();
+  _tmpCtx.translate(W, 0); _tmpCtx.scale(-1, 1);
+  _tmpCtx.drawImage(video, 0, 0, W, H);
+  _tmpCtx.restore();
+
+  // 2. 차분(diff) 계산: current XOR previous
+  _diffCtx.clearRect(0, 0, W, H);
+  _diffCtx.drawImage(_prevCanvas, 0, 0);
+  _diffCtx.globalCompositeOperation = 'difference';
+  _diffCtx.drawImage(_tmpCanvas, 0, 0);
+  _diffCtx.globalCompositeOperation = 'source-over';
+
+  // 3. 차분 증폭 (screen 2회 → 쨍한 색)
+  _diffCtx.globalCompositeOperation = 'screen';
+  _diffCtx.drawImage(_diffCanvas, 0, 0);
+  _diffCtx.drawImage(_diffCanvas, 0, 0);
+  _diffCtx.globalCompositeOperation = 'source-over';
+
+  // 4. prev 갱신
+  _prevCtx.clearRect(0, 0, W, H);
+  _prevCtx.drawImage(_tmpCanvas, 0, 0);
+
+  // 5. 잔상 캔버스 decay
+  [_rCtx, _gCtx, _bCtx].forEach(ctx => {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.globalAlpha = 0.15;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  });
+
+  // 6. 차분을 R/G/B 잔상 캔버스에 추가 (screen blend)
+  // R: 오른쪽 shift (CSS transform translateX(7px)로 처리)
+  // B: 왼쪽 shift (CSS transform translateX(-7px)로 처리)
+  _rCtx.globalCompositeOperation = 'screen';
+  _rCtx.drawImage(_diffCanvas, 0, 0);
+  _gCtx.globalCompositeOperation = 'screen';
+  _gCtx.drawImage(_diffCanvas, 0, 0);
+  _bCtx.globalCompositeOperation = 'screen';
+  _bCtx.drawImage(_diffCanvas, 0, 0);
+  [_rCtx, _gCtx, _bCtx].forEach(c => { c.globalCompositeOperation = 'source-over'; });
+
+  // 7. 현재 프레임 → 비디오 캔버스
+  _vidCtx.clearRect(0, 0, W, H);
+  _vidCtx.drawImage(_tmpCanvas, 0, 0);
+
+  videoArtFrame = requestAnimationFrame(renderVideoArtFrame);
+}
+
+function stopVideoArt() {
+  if (videoArtFrame) { cancelAnimationFrame(videoArtFrame); videoArtFrame = null; }
+  document.getElementById('camRgbWrap').classList.add('hidden');
+  [_rCtx, _gCtx, _bCtx, _vidCtx].forEach(ctx => {
+    if (ctx) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  });
+  _rCtx = _gCtx = _bCtx = _vidCtx = null;
+  _tmpCtx = _prevCtx = _diffCtx = null;
+  _tmpCanvas = _prevCanvas = _diffCanvas = null;
+}
+
+function applyCamFilter(name) {
+  currentCamFilter = name;
+  const cfg = CAM_FILTER_DEFS[name] || CAM_FILTER_DEFS.none;
+  const video = document.getElementById('camVideo');
+  const overlay = document.getElementById('camFilterOverlay');
+  const vignette = document.getElementById('camVignette');
+
+  // 기존 비디오아트 정리
+  if (name !== 'videoart') stopVideoArt();
+
+  // CSS 필터 클래스 교체
+  Object.values(CAM_FILTER_DEFS).forEach(f => { if (f.cls) video.classList.remove(f.cls); });
+  if (cfg.cls) video.classList.add(cfg.cls);
+
+  // 비디오아트: video 숨기고 canvas로 대체
+  video.style.opacity = (name === 'videoart') ? '0' : '';
+
+  // Grain
+  overlay.style.opacity = cfg.grain || 0;
+  if (cfg.grain > 0 && !grainFrame) animateGrain();
+  else if (!cfg.grain) stopGrain();
+
+  // Vignette
+  vignette.style.opacity = cfg.vig || 0;
+
+  // 비디오아트 시작
+  if (name === 'videoart') {
+    if (video.readyState >= 2) { initVideoArtCanvases(); renderVideoArtFrame(); }
+    else video.addEventListener('playing', () => { initVideoArtCanvases(); renderVideoArtFrame(); }, { once: true });
+  }
+
+  // 버튼 상태
+  document.querySelectorAll('.cam-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === name);
+  });
+}
+
+document.getElementById('camFilterRow').addEventListener('click', e => {
+  const btn = e.target.closest('.cam-filter-btn');
+  if (btn) applyCamFilter(btn.dataset.filter);
+});
+
+// ── 카메라 피아노 토글 ──
+document.getElementById('camPianoToggle').addEventListener('click', () => {
+  camPianoOn = !camPianoOn;
+  const wrap = document.getElementById('camPianoWrap');
+  const btn = document.getElementById('camPianoToggle');
+  if (wrap) wrap.style.display = camPianoOn ? '' : 'none';
+  if (btn) {
+    btn.textContent = camPianoOn ? '피아노 ON' : '피아노 OFF';
+    btn.classList.toggle('active', camPianoOn);
+  }
+  updateCamDisplay();
+});
+
+// ── JSON 내보내기 ──
+document.getElementById('exportJsonBtn').addEventListener('click', () => {
+  const data = getSaves();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'minsound_projects.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ── JSON 불러오기 ──
+document.getElementById('importJsonFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data)) { alert('올바른 minsound JSON 파일이 아닙니다.'); return; }
+      if (!confirm(`${data.length}개 프로젝트를 불러옵니다. 기존 데이터에 추가됩니다.`)) return;
+      const existing = getSaves();
+      data.forEach(item => {
+        const idx = existing.findIndex(s => s.name === item.name);
+        if (idx >= 0) existing[idx] = item;
+        else existing.push(item);
+      });
+      putSaves(existing);
+      renderSaveModal();
+    } catch {
+      alert('JSON 파일을 읽는 중 오류가 발생했습니다.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
 
 // ── 초기화 ──
 // 저장된 프로젝트가 없을 때만 샘플 코드를 뷰에 표시 (localStorage 비변경)
