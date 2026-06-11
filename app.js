@@ -2081,7 +2081,7 @@ let _lastVAFrameTs = 0;
 
 function initVideoArtCanvases() {
   const video = document.getElementById('camVideo');
-  const maxW = _isMobile ? 320 : 480;
+  const maxW = _isMobile ? 240 : 480;
   const W = Math.min(video.videoWidth || 640, maxW);
   const H = video.videoHeight && video.videoWidth
     ? Math.round(W * video.videoHeight / video.videoWidth) : 270;
@@ -2103,7 +2103,7 @@ function initVideoArtCanvases() {
 }
 
 function renderVideoArtFrame(ts) {
-  if (_isMobile && ts - _lastVAFrameTs < 33) {
+  if (_isMobile && ts - _lastVAFrameTs < 66) {
     videoArtFrame = requestAnimationFrame(renderVideoArtFrame); return;
   }
   _lastVAFrameTs = ts;
@@ -2138,7 +2138,8 @@ function renderVideoArtFrame(ts) {
 
   // 3. 차분 증폭 (screen 2회 → 쨍한 색)
   _diffCtx.globalCompositeOperation = 'screen';
-  for (let _p = 0; _p < videoArtAmpPasses; _p++) _diffCtx.drawImage(_diffCanvas, 0, 0);
+  const _passes = _isMobile ? Math.min(videoArtAmpPasses, 1) : videoArtAmpPasses;
+  for (let _p = 0; _p < _passes; _p++) _diffCtx.drawImage(_diffCanvas, 0, 0);
   _diffCtx.globalCompositeOperation = 'source-over';
 
   // 4. prev 갱신
