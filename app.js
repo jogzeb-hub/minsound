@@ -276,6 +276,7 @@ const EP_URLS = {
 const EP1_BASE = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/electric_piano_1-mp3/';
 const EP2_BASE = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/electric_piano_2-mp3/';
 let ep1Poly = null, ep2Poly = null;
+let ep1Gain = null, ep2Gain = null, balladGain = null;
 let lastEP1Notes = [], lastEP2Notes = [], lastBalladNotes = [];
 
 function ensureEPSynth(which) {
@@ -293,13 +294,15 @@ function ensureEPSynth(which) {
     release: 1.5,
   });
   sampler.connect(g);
-  if (which === 'ep1') ep1Poly = sampler;
-  else ep2Poly = sampler;
+  if (which === 'ep1') { ep1Poly = sampler; ep1Gain = g; }
+  else { ep2Poly = sampler; ep2Gain = g; }
 }
 
 function playEP(which, root, acc, oct, quality, inv, hits = 1) {
   ensureEPSynth(which);
   const sampler = which === 'ep1' ? ep1Poly : ep2Poly;
+  const gn = which === 'ep1' ? ep1Gain : ep2Gain;
+  if (gn) { gn.gain.cancelScheduledValues(Tone.now()); gn.gain.setValueAtTime(2.4, Tone.now()); }
   sampler.releaseAll(Tone.now());
   if (which === 'ep1') lastEP1Notes = []; else lastEP2Notes = [];
   const midiNotes = getChordMidi(root, acc, oct, quality, inv);
@@ -339,6 +342,7 @@ function ensureBalladSynth() {
     onload: () => { balladSamplerLoaded = true; },
   });
   balladPoly.connect(g);
+  balladGain = g;
 }
 
 function midiToNoteName(m) {
@@ -372,6 +376,7 @@ function bassLoudComp(noteName) {
 
 function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
   ensureBalladSynth();
+  if (balladGain) { balladGain.gain.cancelScheduledValues(Tone.now()); balladGain.gain.setValueAtTime(0.72, Tone.now()); }
   if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
   const midiNotes = getChordMidi(root, acc, oct, quality, inv);
   const noteNames = midiNotes.map(midiToNoteName);
@@ -428,22 +433,29 @@ function playCamEndingArpeggio() {
     return 0.68;
   };
 
+  const fadeOut = (gainNode, normalVal, fadeDur) => {
+    gainNode.gain.cancelScheduledValues(Tone.now());
+    gainNode.gain.setValueAtTime(normalVal, releaseAt);
+    gainNode.gain.linearRampToValueAtTime(0.0001, releaseAt + fadeDur);
+    setTimeout(() => {
+      gainNode.gain.cancelScheduledValues(Tone.now());
+      gainNode.gain.setValueAtTime(normalVal, Tone.now());
+    }, (releaseAt - Tone.now() + fadeDur + 0.5) * 1000);
+  };
+
   if (currentSound === 'ep1' || currentSound === 'ep2') {
     ensureEPSynth(currentSound);
     const sampler = currentSound === 'ep1' ? ep1Poly : ep2Poly;
+    const gainNode = currentSound === 'ep1' ? ep1Gain : ep2Gain;
     sampler.releaseAll(Tone.now());
     allNames.forEach((n, i) => sampler.triggerAttack(n, now + times[i], getVel(i, n)));
-    sampler.release = 4.5;
-    sampler.releaseAll(releaseAt);
-    setTimeout(() => { sampler.release = 1.5; }, (releaseAt - Tone.now() + 5) * 1000);
+    if (gainNode) fadeOut(gainNode, 2.4, 6.0);
   } else if (currentSound === 'balladpiano') {
     ensureBalladSynth();
     if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
     lastBalladNotes = allNames;
     allNames.forEach((n, i) => balladPoly.triggerAttack(n, now + times[i], getVel(i, n)));
-    balladPoly.release = 7.0;
-    balladPoly.releaseAll(releaseAt);
-    setTimeout(() => { balladPoly.release = 5.0; }, (releaseAt - Tone.now() + 8) * 1000);
+    if (balladGain) fadeOut(balladGain, 0.72, 8.0);
   } else {
     playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
   }
