@@ -2037,8 +2037,8 @@ let grainFrame = null, grainSeed = 0;
 let videoArtFrame = null;
 let videoArtColor = 'rainbow'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
-let videoArtDecay = 0.0056;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 7 대응)
-let videoArtAmpPasses = 6;  // screen 증폭 횟수
+let videoArtDecay = 0.014;  // 잔상 감쇠 (낮을수록 오래 유지, 슬라이더 기본값 1 대응)
+let videoArtAmpPasses = 1;  // screen 증폭 횟수
 let _rCtx = null, _gCtx = null, _bCtx = null, _vidCtx = null;
 let _tmpCanvas = null, _prevCanvas = null, _diffCanvas = null;
 let _tmpCtx = null, _prevCtx = null, _diffCtx = null;
@@ -2087,20 +2087,19 @@ function renderVideoArtFrame() {
   const W = _tmpCanvas.width, H = _tmpCanvas.height;
   const shift = Math.max(3, Math.round(W * 0.013));
 
-  // 1. 현재 프레임 (미러, 선택시 픽셀화) → tmpCanvas
-  _tmpCtx.imageSmoothingEnabled = false;
+  // 1. 현재 프레임 (미러, 선택시 모자이크) → tmpCanvas
   _tmpCtx.clearRect(0, 0, W, H);
   _tmpCtx.save();
   _tmpCtx.translate(W, 0); _tmpCtx.scale(-1, 1);
+  _tmpCtx.drawImage(video, 0, 0, W, H);
+  _tmpCtx.restore();
   if (pixelBlock > 1) {
     const pw = Math.max(1, Math.round(W / pixelBlock));
     const ph = Math.max(1, Math.round(H / pixelBlock));
-    _tmpCtx.drawImage(video, 0, 0, pw, ph);
-    _tmpCtx.restore();
+    _tmpCtx.imageSmoothingEnabled = true;
+    _tmpCtx.drawImage(_tmpCanvas, 0, 0, pw, ph);
+    _tmpCtx.imageSmoothingEnabled = false;
     _tmpCtx.drawImage(_tmpCanvas, 0, 0, pw, ph, 0, 0, W, H);
-  } else {
-    _tmpCtx.drawImage(video, 0, 0, W, H);
-    _tmpCtx.restore();
   }
 
   // 2. 차분(diff) 계산: current XOR previous
@@ -2202,7 +2201,11 @@ function applyCamFilter(name) {
   // 비디오아트 시작
   if (name === 'videoart') {
     pixelBlock = 1;
+    videoArtDecay = 0.014;
+    videoArtAmpPasses = 1;
     document.getElementById('camVaPixelSlider').value = 1;
+    document.getElementById('camVaDecaySlider').value = 1;
+    document.getElementById('camVaIntensitySlider').value = 1;
     if (video.readyState >= 2) { initVideoArtCanvases(); renderVideoArtFrame(); }
     else video.addEventListener('playing', () => { initVideoArtCanvases(); renderVideoArtFrame(); }, { once: true });
   }
