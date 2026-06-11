@@ -207,8 +207,6 @@ function playSoundFrom(root, acc, oct, quality, inv, hits = 1) {
     playEP(currentSound, root, acc, oct, quality, inv, hits);
     return;
   }
-  if (currentSound === 'strings') { playStrings(root, acc, oct, quality, inv, hits); return; }
-  if (currentSound === 'organ') { playOrgan(root, acc, oct, quality, inv, hits); return; }
   const freqs = getChordFreqs(root, acc, oct, quality, inv);
   chordOscs.forEach((o, i) => o.frequency.rampTo(freqs[i % freqs.length], 0.04));
   chordGain.gain.rampTo(0.5 / NUM_OSCS, 0.07);
@@ -217,8 +215,6 @@ function playSoundFrom(root, acc, oct, quality, inv, hits = 1) {
 function stopSound() {
   if (!audioReady) return;
   chordGain.gain.rampTo(0, 0.14);
-  if (currentSound === 'strings' && stringsPoly) { stringsPoly.releaseAll(); lastStringsNotes = []; }
-  if (currentSound === 'organ' && organPoly) { organPoly.releaseAll(); lastOrganNotes = []; }
 }
 
 // ── 피아노 발라드 악기 (Salamander Grand Piano) ──
@@ -381,55 +377,6 @@ function playCountClick(accent) {
   countSynth.triggerAttackRelease(accent ? 'C6' : 'G5', '32n', Tone.now());
 }
 
-// ── 현악 패드 ──
-let stringsPoly = null, lastStringsNotes = [];
-function ensureStringsSynth() {
-  if (stringsPoly) return;
-  const rv = new Tone.Reverb({ decay: 3.5, wet: 0.45 }); rv.connect(Tone.Destination);
-  const chorus = new Tone.Chorus(3, 2.5, 0.5); chorus.connect(rv);
-  const lim = new Tone.Limiter(-4); lim.connect(chorus);
-  const g = new Tone.Gain(0.55); g.connect(lim);
-  stringsPoly = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'sawtooth' },
-    envelope: { attack: 0.65, decay: 0.3, sustain: 0.85, release: 2.5 },
-  });
-  stringsPoly.connect(g);
-}
-function playStrings(root, acc, oct, quality, inv, hits = 1) {
-  ensureStringsSynth();
-  stringsPoly.releaseAll(Tone.now()); lastStringsNotes = [];
-  const midiNotes = getChordMidi(root, acc, oct, quality, inv);
-  const noteNames = midiNotes.map(midiToNoteName);
-  const barDur = (60 / getAutoBpm()) * 4;
-  const now = Tone.now() + 0.05;
-  noteNames.forEach((n, i) => stringsPoly.triggerAttackRelease(n, barDur * 1.3, now, i === 0 ? 0.62 : 0.52));
-  lastStringsNotes = noteNames;
-}
-
-// ── 오르간 ──
-let organPoly = null, lastOrganNotes = [];
-function ensureOrganSynth() {
-  if (organPoly) return;
-  const rv = new Tone.Reverb({ decay: 1.8, wet: 0.22 }); rv.connect(Tone.Destination);
-  const chorus = new Tone.Chorus(1.5, 3.5, 0.3); chorus.connect(rv);
-  const lim = new Tone.Limiter(-4); lim.connect(chorus);
-  const g = new Tone.Gain(0.48); g.connect(lim);
-  organPoly = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'square' },
-    envelope: { attack: 0.008, decay: 0.01, sustain: 1.0, release: 0.07 },
-  });
-  organPoly.connect(g);
-}
-function playOrgan(root, acc, oct, quality, inv, hits = 1) {
-  ensureOrganSynth();
-  organPoly.releaseAll(Tone.now()); lastOrganNotes = [];
-  const midiNotes = getChordMidi(root, acc, oct, quality, inv);
-  const noteNames = midiNotes.map(midiToNoteName);
-  const barDur = (60 / getAutoBpm()) * 4;
-  const now = Tone.now() + 0.02;
-  noteNames.forEach((n, i) => organPoly.triggerAttackRelease(n, barDur * 1.05, now, i === 0 ? 0.65 : 0.55));
-  lastOrganNotes = noteNames;
-}
 
 // ── 라벨 ──
 function buildLabel(root, acc, quality) {
