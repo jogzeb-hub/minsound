@@ -1527,6 +1527,11 @@ async function playCurrentChordFromCameraTap() {
   const c = chords[currentIdx];
   isSpaceHeld = true;
   playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  if (_vaFlashOn && currentCamFilter === 'videoart') {
+    _vaFlashActive = true;
+    clearTimeout(_vaFlashTimer);
+    _vaFlashTimer = setTimeout(() => { _vaFlashActive = false; }, 420);
+  }
   renderChordList();
   updateCamDisplay();
   scrollToActive();
@@ -1599,7 +1604,7 @@ window.addEventListener('keydown', e => {
 
   if (e.code === 'Space' || e.code === 'ArrowDown') {
     e.preventDefault(); if (!e.repeat) onPress();
-  } else if (e.code === 'End' && !e.repeat) {
+  } else if ((e.code === 'End' || e.key === ']') && !e.repeat) {
     const isCamOpen = !document.getElementById('camOverlay').classList.contains('hidden');
     if (isCamOpen) { e.preventDefault(); ensureAudio().then(() => playCamEndingArpeggio()); }
   } else if (e.code === 'Delete') {
