@@ -2103,7 +2103,7 @@ function initVideoArtCanvases() {
 }
 
 function renderVideoArtFrame(ts) {
-  if (_isMobile && ts - _lastVAFrameTs < 66) {
+  if (_isMobile && ts - _lastVAFrameTs < 42) {
     videoArtFrame = requestAnimationFrame(renderVideoArtFrame); return;
   }
   _lastVAFrameTs = ts;
