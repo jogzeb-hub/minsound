@@ -243,6 +243,10 @@ function playSoundFrom(root, acc, oct, quality, inv, hits = 1) {
     playEP(currentSound, root, acc, oct, quality, inv, hits);
     return;
   }
+  if (currentSound === 'bell') {
+    playBell(root, acc, oct, quality, inv);
+    return;
+  }
   const freqs = getChordFreqs(root, acc, oct, quality, inv);
   chordOscs.forEach((o, i) => o.frequency.rampTo(freqs[i % freqs.length], 0.04));
   chordGain.gain.rampTo(0.5 / NUM_OSCS, 0.07);
@@ -265,6 +269,36 @@ const PIANO_URLS = {
 };
 const PIANO_BASE = 'https://tonejs.github.io/audio/salamander/';
 let balladSamplerLoaded = false;
+
+// ── 벨 악기 (FMSynth PolySynth) ──
+let bellPoly = null, bellGain = null, bellReverb = null;
+let lastBellNotes = [];
+
+function ensureBellSynth() {
+  if (bellPoly) return;
+  bellReverb = new Tone.Reverb({ decay: 3.5, wet: 0.42 });
+  bellGain = new Tone.Gain(0.78);
+  bellGain.connect(lim);
+  bellReverb.connect(bellGain);
+  bellPoly = new Tone.PolySynth(Tone.FMSynth, {
+    harmonicity: 5.1,
+    modulationIndex: 16,
+    oscillator: { type: 'sine' },
+    envelope: { attack: 0.001, decay: 2.0, sustain: 0.0, release: 1.5 },
+    modulation: { type: 'sine' },
+    modulationEnvelope: { attack: 0.002, decay: 0.3, sustain: 0, release: 0.3 }
+  });
+  bellPoly.connect(bellReverb);
+}
+
+function playBell(root, acc, oct, quality, inv) {
+  ensureBellSynth();
+  const freqs = getChordFreqs(root, acc, oct, quality, inv);
+  const notes = freqs.map(f => Tone.Frequency(f).toNote());
+  if (lastBellNotes.length) bellPoly.triggerRelease(lastBellNotes, Tone.now());
+  lastBellNotes = notes;
+  notes.forEach((n, i) => bellPoly.triggerAttackRelease(n, '2n', Tone.now() + i * 0.018, 0.75));
+}
 
 // ── 일렉 피아노 (MIDI.js FluidR3 GM) ──
 const EP_URLS = {
