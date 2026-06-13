@@ -2650,7 +2650,7 @@ let pixelBlock = 1;
 
 // ── 크로마키 ──
 let _ckCtx = null, _ckFrame = null, _ckOffCtx = null;
-let _ckColor = { r: 0, g: 255, b: 0 };
+let _ckColor = { r: 255, g: 255, b: 255 };
 let _ckReplaceColor = { r: 0, g: 0, b: 0 };
 let _ckTolerance = 40;
 let _ckRainbow = false;
@@ -2738,7 +2738,7 @@ function renderChromaKeyFrame() {
 
 // ── RGB 색분리 ──
 let _rsCtx = null, _rsFrame = null, _rsOffCtx = null;
-const RS_OFFSET = 100;
+let _rsOffset = 30;
 
 function startRgbSplit() {
   const overlay = document.getElementById('camOverlay');
@@ -2787,7 +2787,7 @@ function renderRgbSplitFrame() {
   const src = _rsOffCtx.getImageData(0, 0, W, H).data;
   const out = _rsCtx.createImageData(W, H);
   const d = out.data;
-  const off = RS_OFFSET;
+  const off = _rsOffset;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const i  = (y * W + x) * 4;
@@ -2877,7 +2877,8 @@ function applyCamFilter(name) {
     else video.addEventListener('playing', startChromaKey, { once: true });
   }
 
-  // 색분리 시작
+  // 색분리 시작 / 패널 show/hide
+  document.getElementById('camRgbSplitPanel').classList.toggle('hidden', name !== 'rgbsplit');
   if (name === 'rgbsplit') {
     const video = document.getElementById('camVideo');
     if (video.readyState >= 2) startRgbSplit();
@@ -2896,6 +2897,10 @@ document.getElementById('camChromaColorPicker').addEventListener('input', e => {
 });
 document.getElementById('camChromaToleranceSlider').addEventListener('input', e => {
   _ckTolerance = parseInt(e.target.value);
+});
+document.getElementById('camRgbSplitSlider').addEventListener('input', e => {
+  _rsOffset = parseInt(e.target.value);
+  document.getElementById('camRgbSplitVal').textContent = _rsOffset + 'px';
 });
 document.getElementById('camChromaPanel').addEventListener('click', e => {
   const btn = e.target.closest('.cam-chroma-swatch');

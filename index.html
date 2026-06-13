@@ -578,8 +578,8 @@ E C#m A B
         <span class="cam-vaslider-lbl" style="width:auto;">범위</span>
         <input type="range" id="camChromaToleranceSlider" min="5" max="120" step="1" value="40" class="cam-density-slider" style="width:110px;">
         <span class="cam-vaslider-lbl" style="width:auto;margin-left:6px;">키색상</span>
-        <div id="camChromaColorSwatch" style="width:22px;height:22px;border-radius:4px;border:2px solid rgba(255,255,255,0.5);background:#00ff00;flex-shrink:0;"></div>
-        <input type="color" id="camChromaColorPicker" value="#00ff00" style="width:26px;height:22px;border:none;background:rgba(255,255,255,0.08);border-radius:4px;padding:1px;cursor:pointer;">
+        <div id="camChromaColorSwatch" style="width:22px;height:22px;border-radius:4px;border:2px solid rgba(255,255,255,0.5);background:#ffffff;flex-shrink:0;"></div>
+        <input type="color" id="camChromaColorPicker" value="#ffffff" style="width:26px;height:22px;border:none;background:rgba(255,255,255,0.08);border-radius:4px;padding:1px;cursor:pointer;">
       </div>
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:0 12px;">
         <span class="cam-vaslider-lbl" style="width:auto;">대체색</span>
@@ -590,6 +590,13 @@ E C#m A B
         <label class="cam-chroma-swatch" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);filter:brightness(0.5);position:relative;" title="직접 선택">
           <input type="color" id="camChromaReplaceColorPicker" value="#000000" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;">
         </label>
+      </div>
+    </div>
+    <div class="cam-chroma-panel hidden" id="camRgbSplitPanel">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:0 12px;">
+        <span class="cam-vaslider-lbl" style="width:auto;">분리간격</span>
+        <input type="range" id="camRgbSplitSlider" min="0" max="200" step="1" value="30" class="cam-density-slider" style="width:130px;">
+        <span class="cam-vaslider-lbl" id="camRgbSplitVal" style="width:auto;margin-left:2px;">30px</span>
       </div>
     </div>
     <div class="cam-va-panel hidden" id="camVaPanel">
