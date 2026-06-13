@@ -959,6 +959,13 @@
     .cam-flt-bw        { filter:grayscale(1) contrast(1.22) brightness(0.90) !important; }
     .cam-flt-camcorder { filter:saturate(0.62) contrast(0.90) brightness(1.07) blur(0.4px) !important; }
 
+    /* ── 캠코더 360p 로우레스 레이어 ── */
+    .cam-lowres-layer {
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; z-index:1; pointer-events:none;
+      image-rendering:auto; /* 부드러운 업스케일 = SD 영상 특유 번짐 */
+    }
+
     /* ── 캠코더 스캔라인 (인터레이스) ── */
     .cam-scanlines {
       position:absolute; inset:0; z-index:3; pointer-events:none;

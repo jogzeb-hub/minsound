@@ -2089,6 +2089,7 @@ document.getElementById('camExitBtn').addEventListener('click', () => {
   if (_camStream) { _camStream.getTracks().forEach(t => t.stop()); _camStream = null; }
   if (_wakeLock)  { try { _wakeLock.release(); } catch(e) {} _wakeLock = null; }
   stopRecDateUpdate();
+  stopLowres();
   document.getElementById('camScanlines').classList.add('hidden');
   document.getElementById('camRecBar').classList.add('hidden');
   document.getElementById('camVideo').srcObject = null;
@@ -2212,6 +2213,57 @@ const CAM_FILTER_DEFS = {
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let _recDateTimer = null;
+let _lowresCtx = null, _lowresFrame = null;
+const LOWRES_H = 360;
+
+function initLowresCanvas() {
+  const video = document.getElementById('camVideo');
+  const canvas = document.getElementById('camLowresCanvas');
+  const aspect = (video.videoWidth && video.videoHeight)
+    ? video.videoWidth / video.videoHeight : 16 / 9;
+  canvas.height = LOWRES_H;
+  canvas.width  = Math.round(LOWRES_H * aspect);
+  _lowresCtx = canvas.getContext('2d');
+}
+
+function renderLowresFrame() {
+  const video = document.getElementById('camVideo');
+  if (_lowresCtx && video.readyState >= 2) {
+    const W = _lowresCtx.canvas.width, H = _lowresCtx.canvas.height;
+    _lowresCtx.save();
+    _lowresCtx.translate(W, 0); _lowresCtx.scale(-1, 1);
+    _lowresCtx.drawImage(video, 0, 0, W, H);
+    _lowresCtx.restore();
+  }
+  _lowresFrame = requestAnimationFrame(renderLowresFrame);
+}
+
+function startLowres() {
+  if (_lowresFrame !== null) return;
+  const video = document.getElementById('camVideo');
+  const canvas = document.getElementById('camLowresCanvas');
+  const run = () => {
+    initLowresCanvas();
+    // CSS 필터를 canvas에 적용, video는 숨김
+    canvas.style.filter = 'saturate(0.62) contrast(0.90) brightness(1.07)';
+    canvas.classList.remove('hidden');
+    video.style.opacity = '0';
+    renderLowresFrame();
+  };
+  if (video.readyState >= 2) run();
+  else video.addEventListener('playing', run, { once: true });
+}
+
+function stopLowres() {
+  if (_lowresFrame) { cancelAnimationFrame(_lowresFrame); _lowresFrame = null; }
+  _lowresCtx = null;
+  const canvas = document.getElementById('camLowresCanvas');
+  canvas.classList.add('hidden');
+  canvas.style.filter = '';
+  if (currentCamFilter !== 'videoart') {
+    document.getElementById('camVideo').style.opacity = '';
+  }
+}
 
 function updateRecDate() {
   const el = document.getElementById('camRecDate');
@@ -2414,6 +2466,7 @@ function applyCamFilter(name) {
 
   // 기존 효과 정리
   if (name !== 'videoart') stopVideoArt();
+  if (name !== 'camcorder') stopLowres();
 
   // 캠코더 블루 틴트
   document.getElementById('camFilterOverlay').classList.toggle('camcorder-tint', name === 'camcorder');
@@ -2425,6 +2478,7 @@ function applyCamFilter(name) {
     if (scanlines) scanlines.classList.remove('hidden');
     if (recBar) recBar.classList.remove('hidden');
     startRecDateUpdate();
+    startLowres();
   } else {
     if (scanlines) scanlines.classList.add('hidden');
     if (recBar) recBar.classList.add('hidden');
