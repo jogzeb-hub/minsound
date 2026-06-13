@@ -1971,6 +1971,9 @@ document.getElementById('camBtn').addEventListener('click', async () => {
 document.getElementById('camExitBtn').addEventListener('click', () => {
   if (_camStream) { _camStream.getTracks().forEach(t => t.stop()); _camStream = null; }
   if (_wakeLock)  { try { _wakeLock.release(); } catch(e) {} _wakeLock = null; }
+  stopRecDateUpdate();
+  document.getElementById('camScanlines').classList.add('hidden');
+  document.getElementById('camRecBar').classList.add('hidden');
   document.getElementById('camVideo').srcObject = null;
   document.getElementById('camOverlay').classList.add('hidden');
 });
@@ -2080,13 +2083,31 @@ document.getElementById('countInBtn').addEventListener('click', () => {
 
 // ── 카메라 필터 ──
 const CAM_FILTER_DEFS = {
-  none:     { cls: '',               grain: 0,    vig: 0    },
-  film90:   { cls: 'cam-flt-film90', grain: 0.13, vig: 0.48 },
-  bw:       { cls: 'cam-flt-bw',     grain: 0.11, vig: 0.38 },
-  videoart: { cls: '',               grain: 0,    vig: 0    },
+  none:      { cls: '',                  grain: 0,    vig: 0    },
+  film90:    { cls: 'cam-flt-film90',    grain: 0.13, vig: 0.48 },
+  bw:        { cls: 'cam-flt-bw',        grain: 0.11, vig: 0.38 },
+  camcorder: { cls: 'cam-flt-camcorder', grain: 0.10, vig: 0.60 },
+  videoart:  { cls: '',                  grain: 0,    vig: 0    },
 };
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
+let _recDateTimer = null;
+
+function updateRecDate() {
+  const el = document.getElementById('camRecDate');
+  if (!el) return;
+  const now = new Date();
+  const p = n => String(n).padStart(2, '0');
+  el.textContent = `${now.getFullYear()}. ${p(now.getMonth()+1)}. ${p(now.getDate())}.  ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+}
+function startRecDateUpdate() {
+  updateRecDate();
+  if (_recDateTimer) return;
+  _recDateTimer = setInterval(updateRecDate, 1000);
+}
+function stopRecDateUpdate() {
+  if (_recDateTimer) { clearInterval(_recDateTimer); _recDateTimer = null; }
+}
 let videoArtFrame = null;
 let videoArtColor = 'rainbow'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
 let _rainbowIdx = 0, _rainbowFrameCount = 0;
@@ -2263,6 +2284,19 @@ function applyCamFilter(name) {
 
   // 기존 효과 정리
   if (name !== 'videoart') stopVideoArt();
+
+  // 캠코더 스캔라인 / REC 바
+  const scanlines = document.getElementById('camScanlines');
+  const recBar = document.getElementById('camRecBar');
+  if (name === 'camcorder') {
+    if (scanlines) scanlines.classList.remove('hidden');
+    if (recBar) recBar.classList.remove('hidden');
+    startRecDateUpdate();
+  } else {
+    if (scanlines) scanlines.classList.add('hidden');
+    if (recBar) recBar.classList.add('hidden');
+    stopRecDateUpdate();
+  }
 
   // CSS 필터 클래스 교체
   Object.values(CAM_FILTER_DEFS).forEach(f => { if (f.cls) video.classList.remove(f.cls); });
