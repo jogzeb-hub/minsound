@@ -2215,7 +2215,7 @@ let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let _recDateTimer = null;
 let _lowresCtx = null, _lowresFrame = null;
-const LOWRES_H = 720;
+const LOWRES_H = 480;
 let _noiseCtx = null, _noiseFrame = null;
 
 function initLowresCanvas() {

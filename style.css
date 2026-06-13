@@ -1002,5 +1002,5 @@
       letter-spacing:2px;
       line-height:1.25;
       white-space:pre;
-      text-shadow:2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 3px 6px rgba(0,0,0,0.85);
+      text-shadow:none;
     }
