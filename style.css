@@ -991,7 +991,7 @@
 
     /* ── 캠코더 타임스탬프 (좌측) ── */
     .cam-rec-bar {
-      position:absolute; bottom:160px; left:14px; z-index:6;
+      position:absolute; bottom:200px; left:134px; z-index:6;
       pointer-events:none;
     }
     .cam-rec-date {
