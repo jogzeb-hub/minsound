@@ -2301,12 +2301,15 @@ function updateRecDate() {
   if (!el) return;
   const now = new Date();
   const p = n => String(n).padStart(2, '0');
-  const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-  const yr = String(now.getFullYear()).slice(2);
+  const MONTHS = ['Jan.','Feb.','Mar.','Apr.','May.','Jun.','Jul.','Aug.','Sep.','Oct.','Nov.','Dec.'];
+  const h24 = now.getHours();
+  const ampm = h24 < 12 ? 'AM' : 'PM';
+  const h12 = p(h24 % 12 || 12);
+  const mi = p(now.getMinutes());
   const mon = MONTHS[now.getMonth()];
   const d = p(now.getDate());
-  const h = p(now.getHours()), mi = p(now.getMinutes()), s = p(now.getSeconds());
-  el.textContent = `'${yr}  ${mon} ${d}\n  ${h}:${mi}:${s}`;
+  const yr = now.getFullYear();
+  el.textContent = `${ampm} ${h12}:${mi}\n${mon} ${d} ${yr}`;
 }
 function startRecDateUpdate() {
   updateRecDate();
