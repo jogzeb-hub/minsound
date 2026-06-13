@@ -984,17 +984,14 @@
     .cam-rec-bar {
       position:absolute; bottom:52px; left:14px; z-index:6;
       pointer-events:none;
-      background:rgba(0,0,0,0.30);
-      padding:4px 9px 5px;
-      border-radius:2px;
     }
     .cam-rec-date {
       display:block;
       font-family:'Courier New', 'Lucida Console', monospace;
-      font-size:0.80rem; font-weight:700;
-      color:#FFA040;
-      letter-spacing:1.8px;
+      font-size:0.82rem; font-weight:700;
+      color:#FFFFFF;
+      letter-spacing:1.6px;
       line-height:1.55;
       white-space:pre;
-      text-shadow:0 0 6px rgba(255,140,0,0.55);
+      text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.9);
     }
