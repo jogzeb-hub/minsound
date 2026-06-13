@@ -2093,7 +2093,6 @@ document.getElementById('camExitBtn').addEventListener('click', () => {
   stopNoise();
   document.getElementById('camScanlines').classList.add('hidden');
   document.getElementById('camRecBar').classList.add('hidden');
-  document.getElementById('camRecOsd').classList.add('hidden');
   document.getElementById('camVideo').srcObject = null;
   document.getElementById('camOverlay').classList.add('hidden');
 });
@@ -2216,7 +2215,7 @@ let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let _recDateTimer = null, _timecodeStart = null, _timecodeTimer = null;
 let _lowresCtx = null, _lowresFrame = null;
-const LOWRES_W = 640;
+const LOWRES_W = 480;
 let _noiseCtx = null, _noiseFrame = null;
 
 function initLowresCanvas() {
@@ -2299,7 +2298,9 @@ function animateNoise() {
 function startNoise() {
   if (_noiseFrame !== null) return;
   const canvas = document.getElementById('camNoiseCanvas');
-  canvas.width = 640; canvas.height = 480;
+  // 화면 크기에 맞게 고해상도 노이즈 (smooth scaling)
+  canvas.width = Math.min(Math.round(window.innerWidth * 0.85), 720);
+  canvas.height = Math.min(Math.round(window.innerHeight * 0.85), 1100);
   _noiseCtx = canvas.getContext('2d');
   canvas.classList.remove('hidden');
   animateNoise();
@@ -2317,7 +2318,7 @@ function updateRecDate() {
   const now = new Date();
   const p = n => String(n).padStart(2, '0');
   const MONTHS = ['JAN.','FEB.','MAR.','APR.','MAY.','JUN.','JUL.','AUG.','SEP.','OCT.','NOV.','DEC.'];
-  el.textContent = `${MONTHS[now.getMonth()]} ${p(now.getDate())}. ${now.getFullYear()}`;
+  el.textContent = `${MONTHS[now.getMonth()]} ${p(now.getDate())}. ${now.getFullYear()}\n  ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
 }
 function updateTimecode() {
   const el = document.getElementById('camRecTimecode');
@@ -2531,18 +2532,15 @@ function applyCamFilter(name) {
   // 캠코더 스캔라인 / REC 바
   const scanlines = document.getElementById('camScanlines');
   const recBar = document.getElementById('camRecBar');
-  const recOsd = document.getElementById('camRecOsd');
   if (name === 'camcorder') {
     if (scanlines) scanlines.classList.remove('hidden');
     if (recBar) recBar.classList.remove('hidden');
-    if (recOsd) recOsd.classList.remove('hidden');
     startRecDateUpdate();
     startLowres();
     startNoise();
   } else {
     if (scanlines) scanlines.classList.add('hidden');
     if (recBar) recBar.classList.add('hidden');
-    if (recOsd) recOsd.classList.add('hidden');
     stopRecDateUpdate();
   }
 
