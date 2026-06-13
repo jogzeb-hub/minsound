@@ -2250,8 +2250,8 @@ function renderLowresFrame() {
 
   ctx.restore();
 
-  // Head switching noise: color band at bottom (~2.5% per frame)
-  if (Math.random() < 0.025) {
+  // Head switching noise: color band at bottom (~0.4% per frame)
+  if (Math.random() < 0.004) {
     const bH = ((Math.random() * 8) | 0) + 2;
     ctx.fillStyle = `hsla(${(Math.random() * 360) | 0},65%,55%,0.35)`;
     ctx.fillRect(0, H - bH, W, bH);

@@ -972,7 +972,7 @@
       z-index:7; pointer-events:none;
       image-rendering:pixelated;
       mix-blend-mode:overlay;
-      opacity:0.45;
+      opacity:0.22;
     }
 
     /* ── 캠코더 스캔라인 (인터레이스) ── */
