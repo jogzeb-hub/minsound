@@ -574,22 +574,28 @@ E C#m A B
       <button class="cam-filter-btn" data-filter="chromakey">🎭 크로마키</button>
     </div>
     <div class="cam-chroma-panel hidden" id="camChromaPanel">
-      <div class="cam-vacolor-row" style="align-items:center;">
-        <div id="camChromaColorSwatch" style="width:28px;height:28px;border-radius:6px;border:2px solid rgba(255,255,255,0.4);background:#00ff00;flex-shrink:0;"></div>
-        <button class="cam-vacolor-btn cam-chroma-preset active" data-ck-color="#00ff00">초록</button>
-        <button class="cam-vacolor-btn cam-chroma-preset" data-ck-color="#0000ff">파랑</button>
-        <button class="cam-vacolor-btn cam-chroma-preset" data-ck-color="#ff0000">빨강</button>
-        <button class="cam-vacolor-btn cam-chroma-preset" data-ck-color="#ffffff">흰색</button>
-        <label class="cam-vacolor-btn" title="직접 선택" style="cursor:pointer;display:flex;align-items:center;gap:4px;">
-          직접
-          <input type="color" id="camChromaColorPicker" value="#00ff00" style="width:22px;height:18px;border:none;background:none;padding:0;cursor:pointer;">
-        </label>
-      </div>
       <div class="cam-vaslider-row">
-        <div class="cam-vaslider-item">
-          <span class="cam-vaslider-lbl">범위</span>
+        <div class="cam-vaslider-item" style="justify-content:center;gap:10px;">
+          <span class="cam-vaslider-lbl" style="width:auto;">키 색상</span>
+          <div id="camChromaColorSwatch" style="width:24px;height:24px;border-radius:5px;border:2px solid rgba(255,255,255,0.5);background:#00ff00;flex-shrink:0;"></div>
+          <input type="color" id="camChromaColorPicker" value="#00ff00" style="width:30px;height:24px;border:none;background:rgba(255,255,255,0.08);border-radius:4px;padding:2px;cursor:pointer;">
+          <span class="cam-vaslider-lbl" style="width:auto;margin-left:8px;">범위</span>
           <input type="range" id="camChromaToleranceSlider" min="5" max="120" step="1" value="40" class="cam-density-slider">
         </div>
+      </div>
+      <div class="cam-vacolor-row" style="flex-wrap:wrap;gap:5px;padding:0 16px;justify-content:center;align-items:center;">
+        <span class="cam-vaslider-lbl" style="width:auto;margin-right:2px;">대체색</span>
+        <button class="cam-chroma-swatch active" data-ck-replace="#000000" style="background:#000000" title="검정"></button>
+        <button class="cam-chroma-swatch" data-ck-replace="#ffffff" style="background:#ffffff" title="흰색"></button>
+        <button class="cam-chroma-swatch" data-ck-replace="#ff2222" style="background:#ff2222" title="빨강"></button>
+        <button class="cam-chroma-swatch" data-ck-replace="#2244ff" style="background:#2244ff" title="파랑"></button>
+        <button class="cam-chroma-swatch" data-ck-replace="#22cc44" style="background:#22cc44" title="초록"></button>
+        <button class="cam-chroma-swatch" data-ck-replace="#ffee00" style="background:#ffee00" title="노랑"></button>
+        <button class="cam-chroma-swatch" data-ck-replace="#ff6600" style="background:#ff6600" title="주황"></button>
+        <button class="cam-chroma-swatch" data-ck-replace="#cc00ff" style="background:#cc00ff" title="보라"></button>
+        <label class="cam-chroma-swatch" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);position:relative;" title="직접 선택">
+          <input type="color" id="camChromaReplaceColorPicker" value="#000000" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;">
+        </label>
       </div>
     </div>
     <div class="cam-va-panel hidden" id="camVaPanel">

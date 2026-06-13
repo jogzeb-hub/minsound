@@ -2651,6 +2651,7 @@ let pixelBlock = 1;
 // ── 크로마키 ──
 let _ckCtx = null, _ckFrame = null, _ckOffCtx = null;
 let _ckColor = { r: 0, g: 255, b: 0 };
+let _ckReplaceColor = { r: 0, g: 0, b: 0 };
 let _ckTolerance = 40;
 
 function _hexToRgb(hex) {
@@ -2664,18 +2665,19 @@ function startChromaKey() {
   if (!canvas) {
     canvas = document.createElement('canvas');
     canvas.id = 'camChromaCanvas';
-    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:2;';
+    // z-index:1 → cam-center(z-index:2) 아래에 위치해 코드 표시 가림 방지
+    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;';
     overlay.appendChild(canvas);
   }
   canvas.classList.remove('hidden');
-  const video = document.getElementById('camVideo');
-  const W = Math.min(video.videoWidth || 640, 480);
-  const ar = (video.videoHeight || 360) / (video.videoWidth || 640);
-  canvas.width = W; canvas.height = Math.round(W * ar);
+
+  const W = overlay.clientWidth || window.innerWidth;
+  const H = overlay.clientHeight || window.innerHeight;
+  canvas.width = W; canvas.height = H;
   _ckCtx = canvas.getContext('2d', { willReadFrequently: true });
 
   const offCanvas = document.createElement('canvas');
-  offCanvas.width = W; offCanvas.height = canvas.height;
+  offCanvas.width = W; offCanvas.height = H;
   _ckOffCtx = offCanvas.getContext('2d');
 
   renderChromaKeyFrame();
@@ -2694,11 +2696,18 @@ function renderChromaKeyFrame() {
     _ckFrame = requestAnimationFrame(renderChromaKeyFrame); return;
   }
   const W = _ckCtx.canvas.width, H = _ckCtx.canvas.height;
+  const vW = video.videoWidth || W, vH = video.videoHeight || H;
 
-  // 미러링으로 그리기
+  // object-fit: cover + 미러(scaleX(-1)) 동일하게 적용
+  const scale = Math.max(W / vW, H / vH);
+  const dW = vW * scale, dH = vH * scale;
+  const ox = (W - dW) / 2, oy = (H - dH) / 2;
+
+  _ckOffCtx.clearRect(0, 0, W, H);
   _ckOffCtx.save();
   _ckOffCtx.translate(W, 0); _ckOffCtx.scale(-1, 1);
-  _ckOffCtx.drawImage(video, 0, 0, W, H);
+  // 뒤집힌 공간에서: 실제 (ox,oy) 위치에 그리려면 (W-ox-dW, oy)
+  _ckOffCtx.drawImage(video, W - ox - dW, oy, dW, dH);
   _ckOffCtx.restore();
 
   const imgData = _ckOffCtx.getImageData(0, 0, W, H);
@@ -2706,10 +2715,11 @@ function renderChromaKeyFrame() {
   const { r: cr, g: cg, b: cb } = _ckColor;
   const tol2 = _ckTolerance * _ckTolerance;
 
+  const { r: rr, g: rg, b: rb } = _ckReplaceColor;
   for (let i = 0; i < d.length; i += 4) {
     const dr = d[i] - cr, dg = d[i+1] - cg, db = d[i+2] - cb;
     if (dr*dr + dg*dg + db*db < tol2) {
-      d[i] = 0; d[i+1] = 0; d[i+2] = 0;
+      d[i] = rr; d[i+1] = rg; d[i+2] = rb;
     }
   }
   _ckCtx.putImageData(imgData, 0, 0);
@@ -2795,23 +2805,23 @@ document.getElementById('camFilterRow').addEventListener('click', e => {
   if (btn) applyCamFilter(btn.dataset.filter);
 });
 
-function _updateChromaColor(hex, activeBtn) {
-  _ckColor = _hexToRgb(hex);
-  document.getElementById('camChromaColorPicker').value = hex;
-  document.getElementById('camChromaColorSwatch').style.background = hex;
-  document.querySelectorAll('.cam-chroma-preset').forEach(b => b.classList.toggle('active', b === activeBtn));
-}
-
-document.getElementById('camChromaPanel').addEventListener('click', e => {
-  const btn = e.target.closest('.cam-chroma-preset');
-  if (!btn) return;
-  _updateChromaColor(btn.dataset.ckColor, btn);
-});
 document.getElementById('camChromaColorPicker').addEventListener('input', e => {
-  _updateChromaColor(e.target.value, null);
+  _ckColor = _hexToRgb(e.target.value);
+  document.getElementById('camChromaColorSwatch').style.background = e.target.value;
 });
 document.getElementById('camChromaToleranceSlider').addEventListener('input', e => {
   _ckTolerance = parseInt(e.target.value);
+});
+document.getElementById('camChromaPanel').addEventListener('click', e => {
+  const btn = e.target.closest('.cam-chroma-swatch');
+  if (!btn || !btn.dataset.ckReplace) return;
+  _ckReplaceColor = _hexToRgb(btn.dataset.ckReplace);
+  document.getElementById('camChromaReplaceColorPicker').value = btn.dataset.ckReplace;
+  document.querySelectorAll('.cam-chroma-swatch').forEach(b => b.classList.toggle('active', b === btn));
+});
+document.getElementById('camChromaReplaceColorPicker').addEventListener('input', e => {
+  _ckReplaceColor = _hexToRgb(e.target.value);
+  document.querySelectorAll('.cam-chroma-swatch').forEach(b => b.classList.remove('active'));
 });
 
 document.getElementById('camVaPixelSlider').addEventListener('input', e => {
