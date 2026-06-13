@@ -980,29 +980,21 @@
       background:rgba(60,80,210,0.48) !important;
     }
 
-    /* ── 캠코더 REC 바 ── */
+    /* ── 캠코더 타임스탬프 (좌하단) ── */
     .cam-rec-bar {
-      position:absolute; top:42px; left:0; right:0; z-index:6;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:0 14px; pointer-events:none;
-    }
-    .cam-rec-dot-wrap { display:flex; align-items:center; gap:5px; }
-    .cam-rec-dot {
-      width:9px; height:9px; border-radius:50%;
-      background:#ff2222; box-shadow:0 0 7px #ff0000;
-      animation:rec-blink 1.1s ease-in-out infinite;
-    }
-    .cam-rec-text {
-      font-size:0.78rem; font-weight:700; color:#ff3333;
-      letter-spacing:2px; text-shadow:0 0 6px rgba(255,0,0,0.55);
-      font-family:'Courier New', monospace;
+      position:absolute; bottom:52px; left:14px; z-index:6;
+      pointer-events:none;
+      background:rgba(0,0,0,0.30);
+      padding:4px 9px 5px;
+      border-radius:2px;
     }
     .cam-rec-date {
-      font-size:0.70rem; color:rgba(255,255,180,0.85);
-      letter-spacing:1.2px; text-shadow:0 1px 4px rgba(0,0,0,0.8);
-      font-family:'Courier New', monospace;
-    }
-    @keyframes rec-blink {
-      0%,45%,100% { opacity:1; }
-      55%,90% { opacity:0; }
+      display:block;
+      font-family:'Courier New', 'Lucida Console', monospace;
+      font-size:0.80rem; font-weight:700;
+      color:#FFA040;
+      letter-spacing:1.8px;
+      line-height:1.55;
+      white-space:pre;
+      text-shadow:0 0 6px rgba(255,140,0,0.55);
     }
