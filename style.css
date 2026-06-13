@@ -986,7 +986,7 @@
     }
     /* 캠코더 블루 틴트 오버레이 */
     .cam-filter-overlay.camcorder-tint {
-      background:rgba(60,80,210,0.48) !important;
+      background:rgba(165,185,230,0.42) !important;
     }
 
     /* ── 캠코더 타임스탬프 (좌측) ── */

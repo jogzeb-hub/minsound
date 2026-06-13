@@ -2239,7 +2239,7 @@ function renderLowresFrame() {
   ctx.translate(W, 0); ctx.scale(-1, 1);
 
   // Main frame + ghosting (0.88 alpha = 12% of previous frame bleeds)
-  ctx.filter = 'saturate(0.62) contrast(0.90) brightness(1.07) blur(0.4px)';
+  ctx.filter = 'saturate(0.42) contrast(0.72) brightness(1.65) blur(0.6px)';
   ctx.globalAlpha = 0.88;
   ctx.drawImage(video, 0, 0, W, H);
 
