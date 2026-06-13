@@ -2339,6 +2339,7 @@ const CAM_FILTER_DEFS = {
   bw:        { cls: 'cam-flt-bw',        grain: 0.11, vig: 0 },
   camcorder: { cls: 'cam-flt-camcorder', grain: 0.22, vig: 0 },
   videoart:  { cls: '',                  grain: 0,    vig: 0 },
+  chromakey: { cls: '',                  grain: 0,    vig: 0 },
 };
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
@@ -2647,6 +2648,74 @@ function stopVideoArt() {
 
 let pixelBlock = 1;
 
+// ── 크로마키 ──
+let _ckCtx = null, _ckFrame = null, _ckOffCtx = null;
+let _ckColor = { r: 0, g: 255, b: 0 };
+let _ckTolerance = 40;
+
+function _hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return { r: parseInt(h.slice(0,2),16), g: parseInt(h.slice(2,4),16), b: parseInt(h.slice(4,6),16) };
+}
+
+function startChromaKey() {
+  const overlay = document.getElementById('camOverlay');
+  let canvas = document.getElementById('camChromaCanvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'camChromaCanvas';
+    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:2;';
+    overlay.appendChild(canvas);
+  }
+  canvas.classList.remove('hidden');
+  const video = document.getElementById('camVideo');
+  const W = Math.min(video.videoWidth || 640, 480);
+  const ar = (video.videoHeight || 360) / (video.videoWidth || 640);
+  canvas.width = W; canvas.height = Math.round(W * ar);
+  _ckCtx = canvas.getContext('2d', { willReadFrequently: true });
+
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = W; offCanvas.height = canvas.height;
+  _ckOffCtx = offCanvas.getContext('2d');
+
+  renderChromaKeyFrame();
+}
+
+function stopChromaKey() {
+  if (_ckFrame) { cancelAnimationFrame(_ckFrame); _ckFrame = null; }
+  _ckCtx = null; _ckOffCtx = null;
+  const canvas = document.getElementById('camChromaCanvas');
+  if (canvas) canvas.classList.add('hidden');
+}
+
+function renderChromaKeyFrame() {
+  const video = document.getElementById('camVideo');
+  if (!_ckCtx || video.readyState < 2) {
+    _ckFrame = requestAnimationFrame(renderChromaKeyFrame); return;
+  }
+  const W = _ckCtx.canvas.width, H = _ckCtx.canvas.height;
+
+  // 미러링으로 그리기
+  _ckOffCtx.save();
+  _ckOffCtx.translate(W, 0); _ckOffCtx.scale(-1, 1);
+  _ckOffCtx.drawImage(video, 0, 0, W, H);
+  _ckOffCtx.restore();
+
+  const imgData = _ckOffCtx.getImageData(0, 0, W, H);
+  const d = imgData.data;
+  const { r: cr, g: cg, b: cb } = _ckColor;
+  const tol2 = _ckTolerance * _ckTolerance;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const dr = d[i] - cr, dg = d[i+1] - cg, db = d[i+2] - cb;
+    if (dr*dr + dg*dg + db*db < tol2) {
+      d[i] = 0; d[i+1] = 0; d[i+2] = 0;
+    }
+  }
+  _ckCtx.putImageData(imgData, 0, 0);
+  _ckFrame = requestAnimationFrame(renderChromaKeyFrame);
+}
+
 function applyCamFilter(name) {
   currentCamFilter = name;
   const cfg = CAM_FILTER_DEFS[name] || CAM_FILTER_DEFS.none;
@@ -2657,6 +2726,7 @@ function applyCamFilter(name) {
   // 기존 효과 정리
   if (name !== 'videoart') stopVideoArt();
   if (name !== 'camcorder') { stopLowres(); stopNoise(); }
+  if (name !== 'chromakey') stopChromaKey();
 
   // 캠코더 블루 틴트
   document.getElementById('camFilterOverlay').classList.toggle('camcorder-tint', name === 'camcorder');
@@ -2681,7 +2751,7 @@ function applyCamFilter(name) {
   if (cfg.cls) video.classList.add(cfg.cls);
 
   // canvas 효과: video 숨기고 canvas로 대체
-  video.style.opacity = name === 'videoart' ? '0' : '';
+  video.style.opacity = (name === 'videoart' || name === 'chromakey') ? '0' : '';
 
   // Grain
   overlay.style.opacity = cfg.grain || 0;
@@ -2710,11 +2780,34 @@ function applyCamFilter(name) {
 
   // 비디오아트 패널 show/hide
   document.getElementById('camVaPanel').classList.toggle('hidden', name !== 'videoart');
+
+  // 크로마키 시작 / 패널 show/hide
+  document.getElementById('camChromaPanel').classList.toggle('hidden', name !== 'chromakey');
+  if (name === 'chromakey') {
+    const video = document.getElementById('camVideo');
+    if (video.readyState >= 2) startChromaKey();
+    else video.addEventListener('playing', startChromaKey, { once: true });
+  }
 }
 
 document.getElementById('camFilterRow').addEventListener('click', e => {
   const btn = e.target.closest('.cam-filter-btn');
   if (btn) applyCamFilter(btn.dataset.filter);
+});
+
+document.getElementById('camChromaPanel').addEventListener('click', e => {
+  const btn = e.target.closest('.cam-chroma-preset');
+  if (!btn) return;
+  _ckColor = _hexToRgb(btn.dataset.ckColor);
+  document.getElementById('camChromaColorPicker').value = btn.dataset.ckColor;
+  document.querySelectorAll('.cam-chroma-preset').forEach(b => b.classList.toggle('active', b === btn));
+});
+document.getElementById('camChromaColorPicker').addEventListener('input', e => {
+  _ckColor = _hexToRgb(e.target.value);
+  document.querySelectorAll('.cam-chroma-preset').forEach(b => b.classList.remove('active'));
+});
+document.getElementById('camChromaToleranceSlider').addEventListener('input', e => {
+  _ckTolerance = parseInt(e.target.value);
 });
 
 document.getElementById('camVaPixelSlider').addEventListener('input', e => {

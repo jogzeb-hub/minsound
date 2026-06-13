@@ -945,11 +945,11 @@
       background:#fff; cursor:pointer;
       box-shadow:0 0 4px rgba(0,0,0,0.5);
     }
-    .cam-va-panel {
+    .cam-va-panel, .cam-chroma-panel {
       position:absolute; top:80px; left:0; right:0; z-index:5;
       display:flex; flex-direction:column; gap:6px;
     }
-    .cam-va-panel.hidden { display:none; }
+    .cam-va-panel.hidden, .cam-chroma-panel.hidden { display:none; }
     .cam-vaslider-row {
       display:flex; flex-direction:column; gap:6px; align-items:center; padding:0 20px;
     }

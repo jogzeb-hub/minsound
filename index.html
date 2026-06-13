@@ -571,6 +571,25 @@ E C#m A B
       <button class="cam-filter-btn" data-filter="bw">흑백</button>
       <button class="cam-filter-btn" data-filter="camcorder">📹 캠코더</button>
       <button class="cam-filter-btn" data-filter="videoart">📼 비디오아트</button>
+      <button class="cam-filter-btn" data-filter="chromakey">🎭 크로마키</button>
+    </div>
+    <div class="cam-chroma-panel hidden" id="camChromaPanel">
+      <div class="cam-vacolor-row">
+        <button class="cam-vacolor-btn cam-chroma-preset active" data-ck-color="#00ff00">초록</button>
+        <button class="cam-vacolor-btn cam-chroma-preset" data-ck-color="#0000ff">파랑</button>
+        <button class="cam-vacolor-btn cam-chroma-preset" data-ck-color="#ff0000">빨강</button>
+        <button class="cam-vacolor-btn cam-chroma-preset" data-ck-color="#ffffff">흰색</button>
+        <label class="cam-vacolor-btn" title="직접 선택" style="cursor:pointer;display:flex;align-items:center;gap:4px;">
+          직접
+          <input type="color" id="camChromaColorPicker" value="#00ff00" style="width:22px;height:18px;border:none;background:none;padding:0;cursor:pointer;">
+        </label>
+      </div>
+      <div class="cam-vaslider-row">
+        <div class="cam-vaslider-item">
+          <span class="cam-vaslider-lbl">범위</span>
+          <input type="range" id="camChromaToleranceSlider" min="5" max="120" step="1" value="40" class="cam-density-slider">
+        </div>
+      </div>
     </div>
     <div class="cam-va-panel hidden" id="camVaPanel">
       <div class="cam-vacolor-row" id="camVideoArtColorRow">
