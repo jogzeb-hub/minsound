@@ -829,15 +829,15 @@ function chordBeatCount(idx) {
   return count;
 }
 
-// ── 다음 실제 코드 인덱스 (null 건너뜀) ──
+// ── 다음 실제 코드 인덱스 (null, 마디선 건너뜀) ──
 function nextRealIdx(from) {
   if (chords.length === 0) return -1;
   let idx = (from + 1) % chords.length;
   for (let i = 0; i < chords.length; i++) {
-    if (chords[idx] !== null) return idx;
+    if (chords[idx] !== null && chords[idx]?.type !== 'barline') return idx;
     idx = (idx + 1) % chords.length;
   }
-  return -1; // 전부 빈칸
+  return -1;
 }
 
 function prevRealIdx(from) {
@@ -845,7 +845,7 @@ function prevRealIdx(from) {
   let idx = from - 1;
   if (idx < 0) idx = chords.length - 1;
   for (let i = 0; i < chords.length; i++) {
-    if (chords[idx] !== null) return idx;
+    if (chords[idx] !== null && chords[idx]?.type !== 'barline') return idx;
     idx = (idx - 1 + chords.length) % chords.length;
   }
   return -1;
@@ -853,7 +853,7 @@ function prevRealIdx(from) {
 
 function currentRealIdx() {
   if (chords.length === 0) return -1;
-  if (currentIdx >= 0 && currentIdx < chords.length && chords[currentIdx] !== null) return currentIdx;
+  if (currentIdx >= 0 && currentIdx < chords.length && chords[currentIdx] !== null && chords[currentIdx]?.type !== 'barline') return currentIdx;
   const from = currentIdx >= 0 && currentIdx < chords.length ? currentIdx - 1 : -1;
   return nextRealIdx(from);
 }
@@ -1032,7 +1032,7 @@ function redo() {
 }
 function deleteOrClear(idx) {
   saveHistory();
-  if (chords[idx] !== null) {
+  if (chords[idx] !== null && chords[idx]?.type !== 'barline') {
     chords[idx] = null;
   } else {
     chords.splice(idx, 1);
@@ -1108,10 +1108,36 @@ function toggleLineBreakAtSelection() {
   const r = getSelectionRange();
   if (!r || r.start <= 0) return false;
   const c = chords[r.start];
-  if (!c) return false;
+  if (!c || c.type === 'barline') return false;
   c.lineBreakBefore = !c.lineBreakBefore;
   renderChordList();
   return true;
+}
+
+function insertChordAt(pos) {
+  saveHistory();
+  const newChord = bIsRest ? null : {
+    root: bRoot, acc: bAcc, oct: bOct, quality: bQuality, inv: bInv,
+    label: buildLabel(bRoot, bAcc, bQuality),
+    color: QUALITY_COLORS[bQuality] || '#00a85a',
+    lyrics: '',
+  };
+  chords.splice(pos, 0, newChord);
+  if (currentIdx >= pos) currentIdx++;
+  selectChordIdx(pos);
+  renderChordList();
+  updateCamDisplay();
+}
+
+function insertBarlineAtSelection() {
+  const r = getSelectionRange();
+  const pos = r ? r.end + 1 : chords.length;
+  saveHistory();
+  chords.splice(pos, 0, { type: 'barline' });
+  if (currentIdx >= pos) currentIdx++;
+  selectChordIdx(pos);
+  renderChordList();
+  updateCamDisplay();
 }
 
 function startDragWatch(e, idx, card) {
@@ -1178,7 +1204,10 @@ function renderChordList() {
       card.dataset.idx = i;
       const barStartClass = (chordsPerRow > 0 && i === rowStart) ? ' bar-start' : '';
 
-      if (c === null) {
+      if (c && c.type === 'barline') {
+        card.className = 'barline-card' + (isSelected ? ' selected' : '');
+        card.innerHTML = `<span class="barline-symbol">|</span><button class="del-btn" title="삭제">×</button>`;
+      } else if (c === null) {
         card.className = 'chord-card empty-card' + barStartClass + (isSelected ? ' selected' : '');
         card.innerHTML = `
           <span class="card-num">${i + 1}</span>
@@ -1264,11 +1293,17 @@ function renderChordList() {
       card.addEventListener('click', e => {
         if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.card-inv-wrap') || e.target.closest('.lyric-input')) return;
         if (dragJustFinished) { dragJustFinished = false; return; }
-        if (e.shiftKey) {
-          selectChordIdx(i, true);
-          renderChordList();
-          return;
+        if (e.shiftKey) { selectChordIdx(i, true); renderChordList(); return; }
+        selectChordIdx(i);
+        renderChordList();
+        const ch = chords[i];
+        if (ch && !ch.type) {
+          ensureAudio().then(() => playSoundFrom(ch.root, ch.acc, ch.oct, ch.quality, ch.inv));
         }
+      });
+      card.addEventListener('dblclick', e => {
+        if (e.target.closest('.del-btn') || e.target.closest('.card-oct-wrap') || e.target.closest('.card-inv-wrap') || e.target.closest('.lyric-input')) return;
+        if (chords[i]?.type === 'barline') return;
         saveHistory();
         chords[i] = bIsRest ? null : {
           root: bRoot, acc: bAcc, oct: bOct, quality: bQuality, inv: bInv,
@@ -1281,11 +1316,27 @@ function renderChordList() {
         updateCamDisplay();
       });
       cardsEl.appendChild(card);
+      if (i < rowEnd - 1) {
+        const slot = document.createElement('div');
+        slot.className = 'insert-slot';
+        slot.title = `${i + 2}번 위치에 삽입`;
+        const _insertPos = i + 1;
+        slot.addEventListener('click', () => insertChordAt(_insertPos));
+        cardsEl.appendChild(slot);
+      }
     }
 
     rowEl.appendChild(cardsEl);
     container.appendChild(rowEl);
   });
+
+  // 줄바꿈 / 줄합치기 버튼 라벨 동적 업데이트
+  const _r = getSelectionRange();
+  const _bBtn = document.getElementById('breakBtn');
+  if (_bBtn) {
+    const _sel = _r && chords[_r.start];
+    _bBtn.textContent = (_sel && !_sel.type && _sel.lineBreakBefore && _r.start > 0) ? '줄합치기' : '줄바꿈';
+  }
 }
 
 document.getElementById('cprSel').addEventListener('change', e => {
@@ -1297,12 +1348,18 @@ document.getElementById('cprSel').addEventListener('change', e => {
 document.getElementById('breakBtn').addEventListener('click', () => {
   toggleLineBreakAtSelection();
 });
+document.getElementById('barlineBtn').addEventListener('click', () => {
+  insertBarlineAtSelection();
+});
 document.getElementById('transposeDownBtn').addEventListener('click', () => transposeAllChords(-1));
 document.getElementById('transposeUpBtn').addEventListener('click', () => transposeAllChords(1));
+document.getElementById('bpmTransposeDownBtn').addEventListener('click', () => transposeAllChords(-1));
+document.getElementById('bpmTransposeUpBtn').addEventListener('click', () => transposeAllChords(1));
 
 function chordsToText() {
   return chords.map(c => {
     if (!c) return '-';
+    if (c.type === 'barline') return '|';
     const root = c.root + (c.acc === '#' ? '#' : c.acc === 'b' ? 'b' : '');
     const qual = c.quality === 'maj' ? '' : c.quality;
     let token = root + qual;
@@ -1753,6 +1810,13 @@ window.addEventListener('keydown', e => {
   if (isCamOpen && key === 'b' && !e.shiftKey && !e.ctrlKey && !e.repeat) { e.preventDefault(); playCamStyled('bossanova'); return; }
   if (isCamOpen && key === 't' && !e.shiftKey && !e.ctrlKey && !e.repeat) { e.preventDefault(); playCamStyled('tango'); return; }
 
+  // Shift+Up/Down: 선택 코드 반음 전치
+  if (e.shiftKey && !e.ctrlKey && !e.metaKey && (e.code === 'ArrowUp' || e.code === 'ArrowDown') && getSelectionRange()) {
+    e.preventDefault();
+    if (!e.repeat) transposeSelectedChord(e.code === 'ArrowUp' ? 1 : -1);
+    return;
+  }
+
   if (e.code === 'Space' || e.code === 'ArrowDown') {
     e.preventDefault(); if (!e.repeat) onPress();
   } else if ((e.code === 'End' || e.key === ']') && !e.repeat) {
@@ -1846,10 +1910,10 @@ spaceBtn.addEventListener('pointercancel', () => onRelease());
 
 const CHROMATIC_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 function transposeAllChords(semitones) {
-  if (!chords.some(c => c)) return;
+  if (!chords.some(c => c && !c.type)) return;
   saveHistory();
   chords.forEach((c, i) => {
-    if (!c) return;
+    if (!c || c.type) return;
     const midi = (c.oct + 1) * 12 + NOTE_PCS[c.root] + (ACC_OFFSET[c.acc] ?? 0);
     const newMidi = midi + semitones;
     const newPc = ((newMidi % 12) + 12) % 12;
@@ -1862,8 +1926,39 @@ function transposeAllChords(semitones) {
   renderChordList();
   updateCamDisplay();
 }
-document.getElementById('transposeDownBtn').addEventListener('click', () => transposeAllChords(-1));
-document.getElementById('transposeUpBtn').addEventListener('click', () => transposeAllChords(1));
+
+function transposeOctave(dir) {
+  if (!chords.some(c => c && !c.type)) return;
+  saveHistory();
+  chords.forEach(c => {
+    if (!c || c.type) return;
+    c.oct = Math.max(1, Math.min(6, (c.oct ?? 3) + dir));
+  });
+  renderChordList();
+  updateCamDisplay();
+}
+document.getElementById('octaveDownBtn').addEventListener('click', () => transposeOctave(-1));
+document.getElementById('octaveUpBtn').addEventListener('click', () => transposeOctave(1));
+
+function transposeSelectedChord(semis) {
+  const r = getSelectionRange();
+  if (!r) return;
+  saveHistory();
+  for (let i = r.start; i <= r.end; i++) {
+    const c = chords[i];
+    if (!c || c.type) continue;
+    const midi = (c.oct + 1) * 12 + NOTE_PCS[c.root] + (ACC_OFFSET[c.acc] ?? 0);
+    const newMidi = Math.max(24, Math.min(95, midi + semis));
+    const newPc = ((newMidi % 12) + 12) % 12;
+    const noteStr = CHROMATIC_SHARP[newPc];
+    c.root = noteStr[0];
+    c.acc = noteStr.length > 1 ? noteStr[1] : '';
+    c.oct = Math.floor(newMidi / 12) - 1;
+    updateChordDerived(i);
+  }
+  renderChordList();
+  updateCamDisplay();
+}
 
 document.getElementById('resetBtn').addEventListener('click', goToStart);
 document.getElementById('camResetBtn').addEventListener('click', goToStart);

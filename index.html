@@ -101,13 +101,16 @@
           <option value="0">무제한</option>
         </select>
         <span class="cpr-label">전조</span>
-        <button class="transpose-btn" id="transposeDownBtn" title="전체 반음 내리기">-</button>
-        <button class="transpose-btn" id="transposeUpBtn" title="전체 반음 올리기">+</button>
+        <button class="transpose-btn" id="transposeDownBtn" title="전체 반음 내리기">-½</button>
+        <button class="transpose-btn" id="transposeUpBtn" title="전체 반음 올리기">+½</button>
+        <button class="transpose-btn" id="octaveDownBtn" title="전체 옥타브 내리기">-8</button>
+        <button class="transpose-btn" id="octaveUpBtn" title="전체 옥타브 올리기">+8</button>
         <button class="undo-btn" id="undoBtn" title="되돌리기 (Ctrl+Z)">↩</button>
         <button class="undo-btn" id="redoBtn" title="다시 실행 (Ctrl+Y)">↪</button>
         <button class="undo-btn" id="copyChordBtn" title="선택 복사 (Ctrl+C)">복사</button>
         <button class="undo-btn" id="pasteChordBtn" title="붙여넣기 (Ctrl+V)">붙여넣기</button>
-        <button class="break-btn" id="breakBtn" title="무제한 줄당에서 선택한 코드부터 새 줄 시작">줄바꿈</button>
+        <button class="break-btn" id="breakBtn" title="선택한 코드부터 새 줄 시작 / 줄 합치기">줄바꿈</button>
+        <button class="break-btn" id="barlineBtn" title="선택 위치에 마디선 삽입">마디선</button>
         <button class="clear-all-btn" id="clearAllBtn">전체 삭제</button>
       </div>
     </div>
@@ -143,8 +146,8 @@
       <button class="bpm-step" id="resetBtn" title="처음으로">⏮ 처음</button>
       <button class="bpm-step loop-btn" id="loopBtn" title="구간 반복">🔁 반복</button>
       <button class="bpm-step countin-btn" id="countInBtn" title="카운트인">카운트인</button>
-      <button class="bpm-step" id="transposeDownBtn" title="반음 내리기">♭ -1</button>
-      <button class="bpm-step" id="transposeUpBtn" title="반음 올리기">♯ +1</button>
+      <button class="bpm-step" id="bpmTransposeDownBtn" title="반음 내리기">♭ -1</button>
+      <button class="bpm-step" id="bpmTransposeUpBtn" title="반음 올리기">♯ +1</button>
     </div>
     <div class="nav-btns">
       <button class="nav-btn" id="backBtn">
@@ -595,7 +598,6 @@ E C#m A B
         <button class="cam-vacolor-btn cam-vatrail-btn active" data-trail="normal">기본</button>
         <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="bloom">블룸</button>
         <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="gravity">중력</button>
-        <button class="cam-vacolor-btn cam-vatrail-btn" data-trail="vortex">회오리</button>
         <button class="cam-vacolor-btn cam-vaflash-btn" id="camVaFlashBtn">⚡ 폭발</button>
       </div>
     </div>
