@@ -2273,8 +2273,11 @@ function animateNoise() {
   const imgData = _noiseCtx.createImageData(w, h);
   const d = imgData.data;
   for (let i = 0; i < d.length; i += 4) {
-    const v = (Math.random() * 255) | 0;
-    d[i] = v; d[i+1] = v; d[i+2] = v;
+    const base = (Math.random() * 255) | 0;
+    const sp = 45;
+    d[i]   = Math.min(255, base + ((Math.random() * sp - sp * 0.5) | 0));
+    d[i+1] = Math.min(255, base + ((Math.random() * sp - sp * 0.5) | 0));
+    d[i+2] = Math.min(255, base + ((Math.random() * sp - sp * 0.5) | 0));
     d[i+3] = (Math.random() * 110) | 0;
   }
   _noiseCtx.putImageData(imgData, 0, 0);
