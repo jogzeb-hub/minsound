@@ -574,7 +574,8 @@ E C#m A B
       <button class="cam-filter-btn" data-filter="chromakey">🎭 크로마키</button>
     </div>
     <div class="cam-chroma-panel hidden" id="camChromaPanel">
-      <div class="cam-vacolor-row">
+      <div class="cam-vacolor-row" style="align-items:center;">
+        <div id="camChromaColorSwatch" style="width:28px;height:28px;border-radius:6px;border:2px solid rgba(255,255,255,0.4);background:#00ff00;flex-shrink:0;"></div>
         <button class="cam-vacolor-btn cam-chroma-preset active" data-ck-color="#00ff00">초록</button>
         <button class="cam-vacolor-btn cam-chroma-preset" data-ck-color="#0000ff">파랑</button>
         <button class="cam-vacolor-btn cam-chroma-preset" data-ck-color="#ff0000">빨강</button>

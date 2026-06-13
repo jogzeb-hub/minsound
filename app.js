@@ -2795,16 +2795,20 @@ document.getElementById('camFilterRow').addEventListener('click', e => {
   if (btn) applyCamFilter(btn.dataset.filter);
 });
 
+function _updateChromaColor(hex, activeBtn) {
+  _ckColor = _hexToRgb(hex);
+  document.getElementById('camChromaColorPicker').value = hex;
+  document.getElementById('camChromaColorSwatch').style.background = hex;
+  document.querySelectorAll('.cam-chroma-preset').forEach(b => b.classList.toggle('active', b === activeBtn));
+}
+
 document.getElementById('camChromaPanel').addEventListener('click', e => {
   const btn = e.target.closest('.cam-chroma-preset');
   if (!btn) return;
-  _ckColor = _hexToRgb(btn.dataset.ckColor);
-  document.getElementById('camChromaColorPicker').value = btn.dataset.ckColor;
-  document.querySelectorAll('.cam-chroma-preset').forEach(b => b.classList.toggle('active', b === btn));
+  _updateChromaColor(btn.dataset.ckColor, btn);
 });
 document.getElementById('camChromaColorPicker').addEventListener('input', e => {
-  _ckColor = _hexToRgb(e.target.value);
-  document.querySelectorAll('.cam-chroma-preset').forEach(b => b.classList.remove('active'));
+  _updateChromaColor(e.target.value, null);
 });
 document.getElementById('camChromaToleranceSlider').addEventListener('input', e => {
   _ckTolerance = parseInt(e.target.value);
