@@ -2317,8 +2317,11 @@ function updateRecDate() {
   if (!el) return;
   const now = new Date();
   const p = n => String(n).padStart(2, '0');
-  const MONTHS = ['JAN.','FEB.','MAR.','APR.','MAY.','JUN.','JUL.','AUG.','SEP.','OCT.','NOV.','DEC.'];
-  el.textContent = `${MONTHS[now.getMonth()]} ${p(now.getDate())}. ${now.getFullYear()}\n  ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+  const MONTHS = ['Jan.','Feb.','Mar.','Apr.','May.','Jun.','Jul.','Aug.','Sep.','Oct.','Nov.','Dec.'];
+  const h24 = now.getHours();
+  const ampm = h24 < 12 ? 'AM' : 'PM';
+  const h12 = p(h24 % 12 || 12);
+  el.textContent = `${ampm} ${h12}:${p(now.getMinutes())}:${p(now.getSeconds())}\n${MONTHS[now.getMonth()]}  ${now.getDate()} ${now.getFullYear()}`;
 }
 function updateTimecode() {
   const el = document.getElementById('camRecTimecode');
