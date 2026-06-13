@@ -574,17 +574,13 @@ E C#m A B
       <button class="cam-filter-btn" data-filter="chromakey">🎭 크로마키</button>
     </div>
     <div class="cam-chroma-panel hidden" id="camChromaPanel">
-      <div class="cam-vaslider-row">
-        <div class="cam-vaslider-item" style="justify-content:center;gap:10px;">
-          <span class="cam-vaslider-lbl" style="width:auto;">키 색상</span>
-          <div id="camChromaColorSwatch" style="width:24px;height:24px;border-radius:5px;border:2px solid rgba(255,255,255,0.5);background:#00ff00;flex-shrink:0;"></div>
-          <input type="color" id="camChromaColorPicker" value="#00ff00" style="width:30px;height:24px;border:none;background:rgba(255,255,255,0.08);border-radius:4px;padding:2px;cursor:pointer;">
-          <span class="cam-vaslider-lbl" style="width:auto;margin-left:8px;">범위</span>
-          <input type="range" id="camChromaToleranceSlider" min="5" max="120" step="1" value="40" class="cam-density-slider">
-        </div>
-      </div>
-      <div class="cam-vacolor-row" style="flex-wrap:wrap;gap:5px;padding:0 16px;justify-content:center;align-items:center;">
-        <span class="cam-vaslider-lbl" style="width:auto;margin-right:2px;">대체색</span>
+      <div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:0 12px;">
+        <span class="cam-vaslider-lbl" style="width:auto;">범위</span>
+        <input type="range" id="camChromaToleranceSlider" min="5" max="120" step="1" value="40" class="cam-density-slider" style="width:100px;">
+        <span class="cam-vaslider-lbl" style="width:auto;margin-left:4px;">키색상</span>
+        <div id="camChromaColorSwatch" style="width:22px;height:22px;border-radius:4px;border:2px solid rgba(255,255,255,0.5);background:#00ff00;flex-shrink:0;"></div>
+        <input type="color" id="camChromaColorPicker" value="#00ff00" style="width:26px;height:22px;border:none;background:rgba(255,255,255,0.08);border-radius:4px;padding:1px;cursor:pointer;">
+        <span class="cam-vaslider-lbl" style="width:auto;margin-left:4px;">대체색</span>
         <button class="cam-chroma-swatch active" data-ck-replace="#000000" style="background:#000000" title="검정"></button>
         <button class="cam-chroma-swatch" data-ck-replace="#ffffff" style="background:#ffffff" title="흰색"></button>
         <button class="cam-chroma-swatch" data-ck-replace="#ff2222" style="background:#ff2222" title="빨강"></button>
