@@ -2206,7 +2206,7 @@ const CAM_FILTER_DEFS = {
   none:      { cls: '',                  grain: 0,    vig: 0 },
   film90:    { cls: 'cam-flt-film90',    grain: 0.13, vig: 0 },
   bw:        { cls: 'cam-flt-bw',        grain: 0.11, vig: 0 },
-  camcorder: { cls: 'cam-flt-camcorder', grain: 0.14, vig: 0 },
+  camcorder: { cls: 'cam-flt-camcorder', grain: 0.22, vig: 0 },
   videoart:  { cls: '',                  grain: 0,    vig: 0 },
 };
 let currentCamFilter = 'none';
