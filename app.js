@@ -2335,11 +2335,11 @@ document.getElementById('countInBtn').addEventListener('click', () => {
 // ── 카메라 필터 ──
 const CAM_FILTER_DEFS = {
   none:      { cls: '',                  grain: 0,    vig: 0 },
-  film90:    { cls: 'cam-flt-film90',    grain: 0.13, vig: 0 },
   bw:        { cls: 'cam-flt-bw',        grain: 0.11, vig: 0 },
   camcorder: { cls: 'cam-flt-camcorder', grain: 0.22, vig: 0 },
   videoart:  { cls: '',                  grain: 0,    vig: 0 },
   chromakey: { cls: '',                  grain: 0,    vig: 0 },
+  rgbsplit:  { cls: '',                  grain: 0,    vig: 0 },
 };
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
@@ -2736,6 +2736,73 @@ function renderChromaKeyFrame() {
   _ckFrame = requestAnimationFrame(renderChromaKeyFrame);
 }
 
+// ── RGB 색분리 ──
+let _rsCtx = null, _rsFrame = null, _rsOffCtx = null;
+const RS_OFFSET = 100;
+
+function startRgbSplit() {
+  const overlay = document.getElementById('camOverlay');
+  let canvas = document.getElementById('camRgbSplitCanvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'camRgbSplitCanvas';
+    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;';
+    overlay.appendChild(canvas);
+  }
+  canvas.classList.remove('hidden');
+  const W = overlay.clientWidth || window.innerWidth;
+  const H = overlay.clientHeight || window.innerHeight;
+  canvas.width = W; canvas.height = H;
+  _rsCtx = canvas.getContext('2d', { willReadFrequently: true });
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = W; offCanvas.height = H;
+  _rsOffCtx = offCanvas.getContext('2d');
+  renderRgbSplitFrame();
+}
+
+function stopRgbSplit() {
+  if (_rsFrame) { cancelAnimationFrame(_rsFrame); _rsFrame = null; }
+  _rsCtx = null; _rsOffCtx = null;
+  const canvas = document.getElementById('camRgbSplitCanvas');
+  if (canvas) canvas.classList.add('hidden');
+}
+
+function renderRgbSplitFrame() {
+  const video = document.getElementById('camVideo');
+  if (!_rsCtx || video.readyState < 2) {
+    _rsFrame = requestAnimationFrame(renderRgbSplitFrame); return;
+  }
+  const W = _rsCtx.canvas.width, H = _rsCtx.canvas.height;
+  const vW = video.videoWidth || W, vH = video.videoHeight || H;
+  const scale = Math.max(W / vW, H / vH);
+  const dW = vW * scale, dH = vH * scale;
+  const ox = (W - dW) / 2, oy = (H - dH) / 2;
+
+  _rsOffCtx.clearRect(0, 0, W, H);
+  _rsOffCtx.save();
+  _rsOffCtx.translate(W, 0); _rsOffCtx.scale(-1, 1);
+  _rsOffCtx.drawImage(video, W - ox - dW, oy, dW, dH);
+  _rsOffCtx.restore();
+
+  const src = _rsOffCtx.getImageData(0, 0, W, H).data;
+  const out = _rsCtx.createImageData(W, H);
+  const d = out.data;
+  const off = RS_OFFSET;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i  = (y * W + x) * 4;
+      const iR = (y * W + Math.min(x + off, W - 1)) * 4;
+      const iB = (y * W + Math.max(x - off, 0)) * 4;
+      d[i]   = src[iR];
+      d[i+1] = src[i + 1];
+      d[i+2] = src[iB + 2];
+      d[i+3] = 255;
+    }
+  }
+  _rsCtx.putImageData(out, 0, 0);
+  _rsFrame = requestAnimationFrame(renderRgbSplitFrame);
+}
+
 function applyCamFilter(name) {
   currentCamFilter = name;
   const cfg = CAM_FILTER_DEFS[name] || CAM_FILTER_DEFS.none;
@@ -2747,6 +2814,7 @@ function applyCamFilter(name) {
   if (name !== 'videoart') stopVideoArt();
   if (name !== 'camcorder') { stopLowres(); stopNoise(); }
   if (name !== 'chromakey') stopChromaKey();
+  if (name !== 'rgbsplit') stopRgbSplit();
 
   // 캠코더 블루 틴트
   document.getElementById('camFilterOverlay').classList.toggle('camcorder-tint', name === 'camcorder');
@@ -2771,7 +2839,7 @@ function applyCamFilter(name) {
   if (cfg.cls) video.classList.add(cfg.cls);
 
   // canvas 효과: video 숨기고 canvas로 대체
-  video.style.opacity = (name === 'videoart' || name === 'chromakey') ? '0' : '';
+  video.style.opacity = (name === 'videoart' || name === 'chromakey' || name === 'rgbsplit') ? '0' : '';
 
   // Grain
   overlay.style.opacity = cfg.grain || 0;
@@ -2807,6 +2875,13 @@ function applyCamFilter(name) {
     const video = document.getElementById('camVideo');
     if (video.readyState >= 2) startChromaKey();
     else video.addEventListener('playing', startChromaKey, { once: true });
+  }
+
+  // 색분리 시작
+  if (name === 'rgbsplit') {
+    const video = document.getElementById('camVideo');
+    if (video.readyState >= 2) startRgbSplit();
+    else video.addEventListener('playing', startRgbSplit, { once: true });
   }
 }
 
