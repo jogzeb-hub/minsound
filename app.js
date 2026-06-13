@@ -2321,7 +2321,7 @@ function updateRecDate() {
   const h24 = now.getHours();
   const ampm = h24 < 12 ? 'AM' : 'PM';
   const h12 = p(h24 % 12 || 12);
-  el.textContent = `${ampm} ${h12}:${p(now.getMinutes())}:${p(now.getSeconds())}\n${MONTHS[now.getMonth()]}  ${now.getDate()} ${now.getFullYear()}`;
+  el.textContent = `${ampm} ${h12}:${p(now.getMinutes())}:${p(now.getSeconds())}\n${MONTHS[now.getMonth()]} ${now.getDate()} ${now.getFullYear()}`;
 }
 function updateTimecode() {
   const el = document.getElementById('camRecTimecode');
