@@ -2090,6 +2090,7 @@ document.getElementById('camExitBtn').addEventListener('click', () => {
   if (_wakeLock)  { try { _wakeLock.release(); } catch(e) {} _wakeLock = null; }
   stopRecDateUpdate();
   stopLowres();
+  stopNoise();
   document.getElementById('camScanlines').classList.add('hidden');
   document.getElementById('camRecBar').classList.add('hidden');
   document.getElementById('camVideo').srcObject = null;
@@ -2215,6 +2216,7 @@ let grainFrame = null, grainSeed = 0;
 let _recDateTimer = null;
 let _lowresCtx = null, _lowresFrame = null;
 const LOWRES_H = 360;
+let _noiseCtx = null, _noiseFrame = null;
 
 function initLowresCanvas() {
   const video = document.getElementById('camVideo');
@@ -2263,6 +2265,35 @@ function stopLowres() {
   if (currentCamFilter !== 'videoart') {
     document.getElementById('camVideo').style.opacity = '';
   }
+}
+
+function animateNoise() {
+  if (!_noiseCtx) return;
+  const w = _noiseCtx.canvas.width, h = _noiseCtx.canvas.height;
+  const imgData = _noiseCtx.createImageData(w, h);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = (Math.random() * 255) | 0;
+    d[i] = v; d[i+1] = v; d[i+2] = v;
+    d[i+3] = (Math.random() * 110) | 0;
+  }
+  _noiseCtx.putImageData(imgData, 0, 0);
+  _noiseFrame = requestAnimationFrame(animateNoise);
+}
+
+function startNoise() {
+  if (_noiseFrame !== null) return;
+  const canvas = document.getElementById('camNoiseCanvas');
+  canvas.width = 240; canvas.height = 180;
+  _noiseCtx = canvas.getContext('2d');
+  canvas.classList.remove('hidden');
+  animateNoise();
+}
+
+function stopNoise() {
+  if (_noiseFrame) { cancelAnimationFrame(_noiseFrame); _noiseFrame = null; }
+  _noiseCtx = null;
+  document.getElementById('camNoiseCanvas').classList.add('hidden');
 }
 
 function updateRecDate() {
@@ -2471,7 +2502,7 @@ function applyCamFilter(name) {
 
   // 기존 효과 정리
   if (name !== 'videoart') stopVideoArt();
-  if (name !== 'camcorder') stopLowres();
+  if (name !== 'camcorder') { stopLowres(); stopNoise(); }
 
   // 캠코더 블루 틴트
   document.getElementById('camFilterOverlay').classList.toggle('camcorder-tint', name === 'camcorder');
@@ -2484,6 +2515,7 @@ function applyCamFilter(name) {
     if (recBar) recBar.classList.remove('hidden');
     startRecDateUpdate();
     startLowres();
+    startNoise();
   } else {
     if (scanlines) scanlines.classList.add('hidden');
     if (recBar) recBar.classList.add('hidden');

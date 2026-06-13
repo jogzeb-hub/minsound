@@ -966,6 +966,15 @@
       image-rendering:auto; /* 부드러운 업스케일 = SD 영상 특유 번짐 */
     }
 
+    /* ── 캠코더 디지털 노이즈 레이어 ── */
+    .cam-noise-layer {
+      position:absolute; inset:0; width:100%; height:100%;
+      z-index:2; pointer-events:none;
+      image-rendering:pixelated;
+      mix-blend-mode:overlay;
+      opacity:0.45;
+    }
+
     /* ── 캠코더 스캔라인 (인터레이스) ── */
     .cam-scanlines {
       position:absolute; inset:0; z-index:3; pointer-events:none;
