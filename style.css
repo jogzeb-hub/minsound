@@ -957,7 +957,7 @@
     /* 비디오 CSS 필터 클래스 */
     .cam-flt-film90    { filter:sepia(0.2) contrast(1.1) saturate(0.78) brightness(0.94) !important; }
     .cam-flt-bw        { filter:grayscale(1) contrast(1.22) brightness(0.90) !important; }
-    .cam-flt-camcorder { filter:contrast(1.14) saturate(0.84) brightness(0.93) hue-rotate(6deg) !important; }
+    .cam-flt-camcorder { filter:sepia(0.22) saturate(0.68) contrast(0.88) brightness(1.08) hue-rotate(-4deg) !important; }
 
     /* ── 캠코더 스캔라인 ── */
     .cam-scanlines {
