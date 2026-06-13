@@ -2215,7 +2215,7 @@ let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let _recDateTimer = null;
 let _lowresCtx = null, _lowresFrame = null;
-const LOWRES_W = 360;
+const LOWRES_W = 640;
 let _noiseCtx = null, _noiseFrame = null;
 
 function initLowresCanvas() {
@@ -2330,7 +2330,7 @@ function animateNoise() {
 function startNoise() {
   if (_noiseFrame !== null) return;
   const canvas = document.getElementById('camNoiseCanvas');
-  canvas.width = 360; canvas.height = 240;
+  canvas.width = 640; canvas.height = 480;
   _noiseCtx = canvas.getContext('2d');
   canvas.classList.remove('hidden');
   animateNoise();
