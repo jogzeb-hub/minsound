@@ -996,8 +996,8 @@
     }
     .cam-rec-date {
       display:block;
-      font-family:'VCR OSD Mono', 'VT323', monospace;
-      font-size:2.6rem; font-weight:400;
+      font-family:'Share Tech Mono', monospace;
+      font-size:2.2rem; font-weight:400;
       color:#FFFFFF;
       letter-spacing:2px;
       line-height:1.35;
