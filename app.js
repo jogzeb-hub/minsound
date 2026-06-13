@@ -2653,6 +2653,15 @@ let _ckCtx = null, _ckFrame = null, _ckOffCtx = null;
 let _ckColor = { r: 0, g: 255, b: 0 };
 let _ckReplaceColor = { r: 0, g: 0, b: 0 };
 let _ckTolerance = 40;
+let _ckRainbow = false;
+
+function _hslToRgb(h, s, l) {
+  const c = (1 - Math.abs(2*l-1)) * s, x = c*(1-Math.abs((h/60)%2-1)), m = l-c/2;
+  let r=0, g=0, b=0;
+  if (h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}
+  else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}
+  return {r:Math.round((r+m)*255),g:Math.round((g+m)*255),b:Math.round((b+m)*255)};
+}
 
 function _hexToRgb(hex) {
   const h = hex.replace('#', '');
@@ -2715,7 +2724,8 @@ function renderChromaKeyFrame() {
   const { r: cr, g: cg, b: cb } = _ckColor;
   const tol2 = _ckTolerance * _ckTolerance;
 
-  const { r: rr, g: rg, b: rb } = _ckReplaceColor;
+  const baseHue = _ckRainbow ? (Date.now() / 12) % 360 : 0;
+  const { r: rr, g: rg, b: rb } = _ckRainbow ? _hslToRgb(baseHue, 1, 0.5) : _ckReplaceColor;
   for (let i = 0; i < d.length; i += 4) {
     const dr = d[i] - cr, dg = d[i+1] - cg, db = d[i+2] - cb;
     if (dr*dr + dg*dg + db*db < tol2) {
@@ -2814,12 +2824,20 @@ document.getElementById('camChromaToleranceSlider').addEventListener('input', e 
 });
 document.getElementById('camChromaPanel').addEventListener('click', e => {
   const btn = e.target.closest('.cam-chroma-swatch');
-  if (!btn || !btn.dataset.ckReplace) return;
+  if (!btn) return;
+  if (btn.id === 'camChromaRainbowBtn') {
+    _ckRainbow = true;
+    document.querySelectorAll('.cam-chroma-swatch').forEach(b => b.classList.toggle('active', b === btn));
+    return;
+  }
+  if (!btn.dataset.ckReplace) return;
+  _ckRainbow = false;
   _ckReplaceColor = _hexToRgb(btn.dataset.ckReplace);
   document.getElementById('camChromaReplaceColorPicker').value = btn.dataset.ckReplace;
   document.querySelectorAll('.cam-chroma-swatch').forEach(b => b.classList.toggle('active', b === btn));
 });
 document.getElementById('camChromaReplaceColorPicker').addEventListener('input', e => {
+  _ckRainbow = false;
   _ckReplaceColor = _hexToRgb(e.target.value);
   document.querySelectorAll('.cam-chroma-swatch').forEach(b => b.classList.remove('active'));
 });
