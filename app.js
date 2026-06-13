@@ -2287,7 +2287,7 @@ function animateNoise() {
 function startNoise() {
   if (_noiseFrame !== null) return;
   const canvas = document.getElementById('camNoiseCanvas');
-  canvas.width = 240; canvas.height = 180;
+  canvas.width = 640; canvas.height = 360;
   _noiseCtx = canvas.getContext('2d');
   canvas.classList.remove('hidden');
   animateNoise();
