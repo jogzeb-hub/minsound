@@ -138,6 +138,7 @@ let countSynth = null;
 
 // ── 사운드 / 자동재생 ──
 let currentSound = 'basic';
+let currentPlayStyle = 'none'; // 'none' | 'bossanova' | 'tango'
 let autoBpm = 80;
 const BPM_MIN = 40;
 const BPM_MAX = 240;
@@ -399,6 +400,117 @@ function playBalladPiano(root, acc, oct, quality, inv, hits = 1) {
       balladPoly.triggerAttackRelease(note, noteDur * 0.96, ht + SPREAD * (ni + 1), cv);
     });
   }
+}
+
+// ── 주법 (보사노바 / 탱고) ──
+function getChordParts(c) {
+  const midi  = getChordMidi(c.root, c.acc, c.oct, c.quality, c.inv);
+  const names = midi.map(midiToNoteName);
+  const bass  = names[0].replace(/(\d+)$/, m => String(Math.max(1, parseInt(m) - 1)));
+  const upper = names.length > 1 ? names.slice(1) : [names[0]];
+  return { bass, upper, all: [bass, ...names.slice(1)] };
+}
+
+function schedHit(sampler, notes, t, dur, vel) {
+  notes.forEach((n, i) => sampler.triggerAttackRelease(n, dur, t + i * 0.014, vel));
+}
+
+function playBossaNova(c) {
+  if (!audioReady || !c) return;
+  const b   = 60 / getAutoBpm();          // 1박 = 초
+  const now = Tone.now() + 0.05;
+  const { bass, upper } = getChordParts(c);
+  // 패턴: 베이스@0, 코드@1박, 코드@1.5박(짧게), 베이스@2박, 코드@3박, 코드@3.5박(짧게)
+  if (currentSound === 'ep1' || currentSound === 'ep2') {
+    ensureEPSynth(currentSound);
+    const sam = currentSound === 'ep1' ? ep1Poly : ep2Poly;
+    const gn  = currentSound === 'ep1' ? ep1Gain  : ep2Gain;
+    if (gn) { gn.gain.cancelScheduledValues(Tone.now()); gn.gain.setValueAtTime(2.4, Tone.now()); }
+    sam.releaseAll(Tone.now());
+    const bv = bassLoudComp(bass);
+    sam.triggerAttackRelease(bass,  b * 1.1, now,             0.90 * bv);
+    schedHit(sam, upper, now + b * 1.0, b * 0.85, 0.74);
+    schedHit(sam, upper, now + b * 1.5, b * 0.35, 0.58);
+    sam.triggerAttackRelease(bass,  b * 0.9, now + b * 2.0,  0.82 * bv);
+    schedHit(sam, upper, now + b * 3.0, b * 0.85, 0.74);
+    schedHit(sam, upper, now + b * 3.5, b * 0.35, 0.58);
+  } else if (currentSound === 'balladpiano') {
+    ensureBalladSynth();
+    if (balladGain) { balladGain.gain.cancelScheduledValues(Tone.now()); balladGain.gain.setValueAtTime(0.72, Tone.now()); }
+    if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
+    lastBalladNotes = [bass, ...upper];
+    const bv = Math.min(1.0, 0.70 * bassLoudComp(bass));
+    balladPoly.triggerAttackRelease(bass, b * 1.2, now,            bv);
+    schedHit(balladPoly, upper, now + b * 1.0, b * 0.85, 0.60);
+    schedHit(balladPoly, upper, now + b * 1.5, b * 0.35, 0.48);
+    balladPoly.triggerAttackRelease(bass, b * 0.9, now + b * 2.0, bv * 0.82);
+    schedHit(balladPoly, upper, now + b * 3.0, b * 0.85, 0.60);
+    schedHit(balladPoly, upper, now + b * 3.5, b * 0.35, 0.48);
+  } else {
+    playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  }
+}
+
+function playTango(c) {
+  if (!audioReady || !c) return;
+  const b   = 60 / getAutoBpm();
+  const now = Tone.now() + 0.05;
+  const { bass, upper, all } = getChordParts(c);
+  // 패턴: 강@0, 스탭@0.5박, 힛@1박, 강@2박, 스탭@2.5박, 힛@3.5박
+  if (currentSound === 'ep1' || currentSound === 'ep2') {
+    ensureEPSynth(currentSound);
+    const sam = currentSound === 'ep1' ? ep1Poly : ep2Poly;
+    const gn  = currentSound === 'ep1' ? ep1Gain  : ep2Gain;
+    if (gn) { gn.gain.cancelScheduledValues(Tone.now()); gn.gain.setValueAtTime(2.4, Tone.now()); }
+    sam.releaseAll(Tone.now());
+    schedHit(sam, all, now,            b * 0.42, 0.92);
+    schedHit(sam, all, now + b * 0.5,  b * 0.20, 0.72);
+    schedHit(sam, all, now + b * 1.0,  b * 0.42, 0.80);
+    schedHit(sam, all, now + b * 2.0,  b * 0.42, 0.92);
+    schedHit(sam, all, now + b * 2.5,  b * 0.20, 0.72);
+    schedHit(sam, all, now + b * 3.5,  b * 0.42, 0.80);
+  } else if (currentSound === 'balladpiano') {
+    ensureBalladSynth();
+    if (balladGain) { balladGain.gain.cancelScheduledValues(Tone.now()); balladGain.gain.setValueAtTime(0.72, Tone.now()); }
+    if (lastBalladNotes.length) balladPoly.triggerRelease(lastBalladNotes, Tone.now());
+    lastBalladNotes = all;
+    schedHit(balladPoly, all, now,            b * 0.42, 0.85);
+    schedHit(balladPoly, all, now + b * 0.5,  b * 0.20, 0.66);
+    schedHit(balladPoly, all, now + b * 1.0,  b * 0.42, 0.74);
+    schedHit(balladPoly, all, now + b * 2.0,  b * 0.42, 0.85);
+    schedHit(balladPoly, all, now + b * 2.5,  b * 0.20, 0.66);
+    schedHit(balladPoly, all, now + b * 3.5,  b * 0.42, 0.74);
+  } else {
+    playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  }
+}
+
+function playChordStyled(c, forcedStyle, hits = 2) {
+  const style = forcedStyle || currentPlayStyle;
+  if (style === 'bossanova') { playBossaNova(c); return; }
+  if (style === 'tango')     { playTango(c);     return; }
+  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, hits);
+}
+
+async function playCamStyled(style) {
+  if (chords.length === 0) return;
+  const idx = currentRealIdx();
+  if (idx === -1) return;
+  clearCamTapReleaseTimer();
+  if (isSpaceHeld) onRelease();
+  await ensureAudio();
+  if (autoPlayActive) return;
+  currentIdx = idx;
+  const c = chords[currentIdx];
+  isSpaceHeld = true;
+  playChordStyled(c, style, 1);
+  renderChordList(); updateCamDisplay(); scrollToActive();
+  const spBtn = document.getElementById('spaceBtn');
+  spBtn.classList.add('pressed'); spBtn.textContent = c.label;
+  camTapReleaseTimer = setTimeout(() => {
+    camTapReleaseTimer = null;
+    if (!autoPlayActive) onRelease();
+  }, (60000 / getAutoBpm()) * 4 + 300);
 }
 
 // ── 카메라 엔딩 롤 (베이스→코드→캡 빠른 롤 + 리타르단도) ──
@@ -1362,7 +1474,7 @@ function autoPlayStep() {
   const c = chords[currentIdx];
   const slotCount = chordBeatCount(idx);
   const effectiveBeats = slotCount * 4;
-  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv, 2);
+  playChordStyled(c);
   showAutoChord(c);
   const beatMs = (60 / getAutoBpm()) * 1000;
   const totalMs = beatMs * effectiveBeats;
@@ -1479,7 +1591,7 @@ async function onPress() {
   isSpaceHeld = true;
   currentIdx = idx;
   const c = chords[currentIdx];
-  playSoundFrom(c.root, c.acc, c.oct, c.quality, c.inv);
+  playChordStyled(c, null, 1);
   if (_vaFlashOn && currentCamFilter === 'videoart') {
     _vaFlashActive = true;
     clearTimeout(_vaFlashTimer);
@@ -1601,6 +1713,11 @@ window.addEventListener('keydown', e => {
     updateCamDisplay();
     return;
   }
+
+  // 카메라 모드 전용: b=보사노바, t=탱고
+  const isCamOpen = !document.getElementById('camOverlay').classList.contains('hidden');
+  if (isCamOpen && key === 'b' && !e.shiftKey && !e.ctrlKey && !e.repeat) { e.preventDefault(); playCamStyled('bossanova'); return; }
+  if (isCamOpen && key === 't' && !e.shiftKey && !e.ctrlKey && !e.repeat) { e.preventDefault(); playCamStyled('tango'); return; }
 
   if (e.code === 'Space' || e.code === 'ArrowDown') {
     e.preventDefault(); if (!e.repeat) onPress();
@@ -1982,6 +2099,9 @@ document.getElementById('camExitBtn').addEventListener('click', () => {
 document.getElementById('soundSel').addEventListener('change', e => {
   currentSound = e.target.value;
 });
+document.getElementById('styleSel').addEventListener('change', e => {
+  currentPlayStyle = e.target.value;
+});
 document.getElementById('bpmDown').addEventListener('click', () => {
   setAutoBpm(autoBpm - 5);
 });
@@ -2083,11 +2203,11 @@ document.getElementById('countInBtn').addEventListener('click', () => {
 
 // ── 카메라 필터 ──
 const CAM_FILTER_DEFS = {
-  none:      { cls: '',                  grain: 0,    vig: 0    },
-  film90:    { cls: 'cam-flt-film90',    grain: 0.13, vig: 0.48 },
-  bw:        { cls: 'cam-flt-bw',        grain: 0.11, vig: 0.38 },
-  camcorder: { cls: 'cam-flt-camcorder', grain: 0.10, vig: 0.60 },
-  videoart:  { cls: '',                  grain: 0,    vig: 0    },
+  none:      { cls: '',                  grain: 0,    vig: 0 },
+  film90:    { cls: 'cam-flt-film90',    grain: 0.13, vig: 0 },
+  bw:        { cls: 'cam-flt-bw',        grain: 0.11, vig: 0 },
+  camcorder: { cls: 'cam-flt-camcorder', grain: 0.08, vig: 0 },
+  videoart:  { cls: '',                  grain: 0,    vig: 0 },
 };
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
