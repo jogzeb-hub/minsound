@@ -984,9 +984,28 @@
         rgba(255,255,255,0.025) 1px, rgba(255,255,255,0.025) 2px
       );
     }
-    /* 캠코더 블루 틴트 오버레이 */
+    /* 캠코더 따뜻한 틴트 오버레이 */
     .cam-filter-overlay.camcorder-tint {
-      background:rgba(165,185,230,0.42) !important;
+      background:rgba(255,235,210,0.10) !important;
+    }
+
+    /* ── 캠코더 REC + 타임코드 (우측 상단) ── */
+    .cam-rec-osd {
+      position:absolute; top:14px; right:14px; z-index:6;
+      pointer-events:none;
+      display:flex; flex-direction:column; align-items:flex-end;
+    }
+    .cam-rec-label {
+      font-family:'VCR OSD Mono','VT323',monospace;
+      font-size:clamp(0.7rem, 2.2vw, 1.6rem); font-weight:400;
+      color:#FFFFFF; letter-spacing:0.18em;
+      line-height:1.2;
+    }
+    .cam-rec-timecode {
+      font-family:'VCR OSD Mono','VT323',monospace;
+      font-size:clamp(0.65rem, 2vw, 1.4rem); font-weight:400;
+      color:#FFFFFF; letter-spacing:0.15em;
+      line-height:1.2;
     }
 
     /* ── 캠코더 타임스탬프 (좌측) ── */
@@ -997,9 +1016,9 @@
     .cam-rec-date {
       display:block;
       font-family:'VCR OSD Mono', 'VT323', monospace;
-      font-size:2.6rem; font-weight:400;
+      font-size:clamp(0.9rem, 3.5vw, 2.6rem); font-weight:400;
       color:#FFFFFF;
-      letter-spacing:2px;
+      letter-spacing:0.12em;
       line-height:1.35;
       white-space:pre;
       text-shadow:none;

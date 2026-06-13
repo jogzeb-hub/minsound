@@ -2093,6 +2093,7 @@ document.getElementById('camExitBtn').addEventListener('click', () => {
   stopNoise();
   document.getElementById('camScanlines').classList.add('hidden');
   document.getElementById('camRecBar').classList.add('hidden');
+  document.getElementById('camRecOsd').classList.add('hidden');
   document.getElementById('camVideo').srcObject = null;
   document.getElementById('camOverlay').classList.add('hidden');
 });
@@ -2213,7 +2214,7 @@ const CAM_FILTER_DEFS = {
 };
 let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
-let _recDateTimer = null;
+let _recDateTimer = null, _timecodeStart = null, _timecodeTimer = null;
 let _lowresCtx = null, _lowresFrame = null;
 const LOWRES_W = 640;
 let _noiseCtx = null, _noiseFrame = null;
@@ -2239,7 +2240,7 @@ function renderLowresFrame() {
   ctx.translate(W, 0); ctx.scale(-1, 1);
 
   // Main frame + ghosting (0.88 alpha = 12% of previous frame bleeds)
-  ctx.filter = 'saturate(0.42) contrast(0.72) brightness(1.65) blur(0.6px)';
+  ctx.filter = 'saturate(0.68) contrast(0.88) brightness(1.05) blur(0.5px)';
   ctx.globalAlpha = 0.88;
   ctx.drawImage(video, 0, 0, W, H);
 
@@ -2249,25 +2250,6 @@ function renderLowresFrame() {
   ctx.drawImage(video, 0, 0, W, H);
 
   ctx.restore();
-
-  // Head switching noise: color band at bottom (~0.4% per frame)
-  if (Math.random() < 0.004) {
-    const bH = ((Math.random() * 8) | 0) + 2;
-    ctx.fillStyle = `hsla(${(Math.random() * 360) | 0},65%,55%,0.35)`;
-    ctx.fillRect(0, H - bH, W, bH);
-  }
-
-  // Horizontal tear: row pixel shift (~0.8% per frame)
-  if (Math.random() < 0.008) {
-    const tY = ((Math.random() * (H - 10)) | 0) + 5;
-    const tH = ((Math.random() * 4) | 0) + 1;
-    const tX = ((Math.random() - 0.5) * 14) | 0;
-    try {
-      const s = ctx.getImageData(0, tY, W, tH);
-      ctx.clearRect(0, tY, W, tH);
-      ctx.putImageData(s, tX, tY);
-    } catch(e) {}
-  }
 
   _lowresFrame = requestAnimationFrame(renderLowresFrame);
 }
@@ -2334,23 +2316,26 @@ function updateRecDate() {
   if (!el) return;
   const now = new Date();
   const p = n => String(n).padStart(2, '0');
-  const MONTHS = ['Jan.','Feb.','Mar.','Apr.','May.','Jun.','Jul.','Aug.','Sep.','Oct.','Nov.','Dec.'];
-  const h24 = now.getHours();
-  const ampm = h24 < 12 ? 'AM' : 'PM';
-  const h12 = p(h24 % 12 || 12);
-  const mi = p(now.getMinutes());
-  const mon = MONTHS[now.getMonth()];
-  const d = p(now.getDate());
-  const yr = now.getFullYear();
-  el.textContent = `${ampm} ${h12}:${mi}\n${mon} ${d} ${yr}`;
+  const MONTHS = ['JAN.','FEB.','MAR.','APR.','MAY.','JUN.','JUL.','AUG.','SEP.','OCT.','NOV.','DEC.'];
+  el.textContent = `${MONTHS[now.getMonth()]} ${p(now.getDate())}. ${now.getFullYear()}`;
+}
+function updateTimecode() {
+  const el = document.getElementById('camRecTimecode');
+  if (!el || !_timecodeStart) return;
+  const sec = Math.floor((Date.now() - _timecodeStart) / 1000);
+  const p = n => String(n).padStart(2, '0');
+  el.textContent = `${p(Math.floor(sec/3600))}:${p(Math.floor((sec%3600)/60))}:${p(sec%60)}`;
 }
 function startRecDateUpdate() {
+  _timecodeStart = Date.now();
   updateRecDate();
+  updateTimecode();
   if (_recDateTimer) return;
-  _recDateTimer = setInterval(updateRecDate, 1000);
+  _recDateTimer = setInterval(() => { updateRecDate(); updateTimecode(); }, 1000);
 }
 function stopRecDateUpdate() {
   if (_recDateTimer) { clearInterval(_recDateTimer); _recDateTimer = null; }
+  _timecodeStart = null;
 }
 let videoArtFrame = null;
 let videoArtColor = 'rainbow'; // 'white' | 'r' | 'g' | 'b' | 'rainbow'
@@ -2546,15 +2531,18 @@ function applyCamFilter(name) {
   // 캠코더 스캔라인 / REC 바
   const scanlines = document.getElementById('camScanlines');
   const recBar = document.getElementById('camRecBar');
+  const recOsd = document.getElementById('camRecOsd');
   if (name === 'camcorder') {
     if (scanlines) scanlines.classList.remove('hidden');
     if (recBar) recBar.classList.remove('hidden');
+    if (recOsd) recOsd.classList.remove('hidden');
     startRecDateUpdate();
     startLowres();
     startNoise();
   } else {
     if (scanlines) scanlines.classList.add('hidden');
     if (recBar) recBar.classList.add('hidden');
+    if (recOsd) recOsd.classList.add('hidden');
     stopRecDateUpdate();
   }
 
