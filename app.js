@@ -2229,14 +2229,49 @@ function initLowresCanvas() {
 }
 
 function renderLowresFrame() {
+  if (!_lowresCtx) { _lowresFrame = requestAnimationFrame(renderLowresFrame); return; }
   const video = document.getElementById('camVideo');
-  if (_lowresCtx && video.readyState >= 2) {
-    const W = _lowresCtx.canvas.width, H = _lowresCtx.canvas.height;
-    _lowresCtx.save();
-    _lowresCtx.translate(W, 0); _lowresCtx.scale(-1, 1);
-    _lowresCtx.drawImage(video, 0, 0, W, H);
-    _lowresCtx.restore();
+  if (video.readyState < 2) { _lowresFrame = requestAnimationFrame(renderLowresFrame); return; }
+  const ctx = _lowresCtx;
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+
+  // AGC: ±3% brightness flicker per frame
+  const agcB = (1.07 + (Math.random() - 0.5) * 0.06).toFixed(3);
+
+  ctx.save();
+  ctx.translate(W, 0); ctx.scale(-1, 1);
+
+  // Main frame + ghosting (0.88 alpha = 12% of previous frame bleeds)
+  ctx.filter = `saturate(0.62) contrast(0.90) brightness(${agcB}) blur(0.4px)`;
+  ctx.globalAlpha = 0.88;
+  ctx.drawImage(video, 0, 0, W, H);
+
+  // Chroma bleed: blurred+saturated layer at low opacity
+  ctx.filter = 'blur(2px) saturate(3)';
+  ctx.globalAlpha = 0.12;
+  ctx.drawImage(video, 0, 0, W, H);
+
+  ctx.restore();
+
+  // Head switching noise: color band at bottom (~2.5% per frame)
+  if (Math.random() < 0.025) {
+    const bH = ((Math.random() * 8) | 0) + 2;
+    ctx.fillStyle = `hsla(${(Math.random() * 360) | 0},65%,55%,0.35)`;
+    ctx.fillRect(0, H - bH, W, bH);
   }
+
+  // Horizontal tear: row pixel shift (~0.8% per frame)
+  if (Math.random() < 0.008) {
+    const tY = ((Math.random() * (H - 10)) | 0) + 5;
+    const tH = ((Math.random() * 4) | 0) + 1;
+    const tX = ((Math.random() - 0.5) * 14) | 0;
+    try {
+      const s = ctx.getImageData(0, tY, W, tH);
+      ctx.clearRect(0, tY, W, tH);
+      ctx.putImageData(s, tX, tY);
+    } catch(e) {}
+  }
+
   _lowresFrame = requestAnimationFrame(renderLowresFrame);
 }
 
@@ -2246,8 +2281,6 @@ function startLowres() {
   const canvas = document.getElementById('camLowresCanvas');
   const run = () => {
     initLowresCanvas();
-    // CSS 필터를 canvas에 적용, video는 숨김
-    canvas.style.filter = 'saturate(0.62) contrast(0.90) brightness(1.07)';
     canvas.classList.remove('hidden');
     video.style.opacity = '0';
     renderLowresFrame();
@@ -2279,6 +2312,16 @@ function animateNoise() {
     d[i+1] = Math.min(255, base + ((Math.random() * sp - sp * 0.5) | 0));
     d[i+2] = Math.min(255, base + ((Math.random() * sp - sp * 0.5) | 0));
     d[i+3] = (Math.random() * 110) | 0;
+  }
+  // Tape dropout: occasional thin white/black horizontal line (~1.2% per frame)
+  if (Math.random() < 0.012) {
+    const dropY = (Math.random() * h) | 0;
+    for (let x = 0; x < w; x++) {
+      const i = (dropY * w + x) * 4;
+      const bright = Math.random() < 0.6 ? 255 : 0;
+      d[i] = d[i+1] = d[i+2] = bright;
+      d[i+3] = ((Math.random() * 160 + 80) | 0);
+    }
   }
   _noiseCtx.putImageData(imgData, 0, 0);
   _noiseFrame = requestAnimationFrame(animateNoise);
