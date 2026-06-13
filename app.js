@@ -2235,14 +2235,11 @@ function renderLowresFrame() {
   const ctx = _lowresCtx;
   const W = ctx.canvas.width, H = ctx.canvas.height;
 
-  // AGC: ±3% brightness flicker per frame
-  const agcB = (1.07 + (Math.random() - 0.5) * 0.06).toFixed(3);
-
   ctx.save();
   ctx.translate(W, 0); ctx.scale(-1, 1);
 
   // Main frame + ghosting (0.88 alpha = 12% of previous frame bleeds)
-  ctx.filter = `saturate(0.62) contrast(0.90) brightness(${agcB}) blur(0.4px)`;
+  ctx.filter = 'saturate(0.62) contrast(0.90) brightness(1.07) blur(0.4px)';
   ctx.globalAlpha = 0.88;
   ctx.drawImage(video, 0, 0, W, H);
 
@@ -2312,16 +2309,6 @@ function animateNoise() {
     d[i+1] = Math.min(255, base + ((Math.random() * sp - sp * 0.5) | 0));
     d[i+2] = Math.min(255, base + ((Math.random() * sp - sp * 0.5) | 0));
     d[i+3] = (Math.random() * 110) | 0;
-  }
-  // Tape dropout: occasional thin white/black horizontal line (~1.2% per frame)
-  if (Math.random() < 0.012) {
-    const dropY = (Math.random() * h) | 0;
-    for (let x = 0; x < w; x++) {
-      const i = (dropY * w + x) * 4;
-      const bright = Math.random() < 0.6 ? 255 : 0;
-      d[i] = d[i+1] = d[i+2] = bright;
-      d[i+3] = ((Math.random() * 160 + 80) | 0);
-    }
   }
   _noiseCtx.putImageData(imgData, 0, 0);
   _noiseFrame = requestAnimationFrame(animateNoise);
