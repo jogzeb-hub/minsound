@@ -2215,16 +2215,16 @@ let currentCamFilter = 'none';
 let grainFrame = null, grainSeed = 0;
 let _recDateTimer = null;
 let _lowresCtx = null, _lowresFrame = null;
-const LOWRES_H = 360;
+const LOWRES_W = 360;
 let _noiseCtx = null, _noiseFrame = null;
 
 function initLowresCanvas() {
   const video = document.getElementById('camVideo');
   const canvas = document.getElementById('camLowresCanvas');
   const aspect = (video.videoWidth && video.videoHeight)
-    ? video.videoWidth / video.videoHeight : 16 / 9;
-  canvas.height = LOWRES_H;
-  canvas.width  = Math.round(LOWRES_H * aspect);
+    ? video.videoWidth / video.videoHeight : 4 / 3;
+  canvas.width  = LOWRES_W;
+  canvas.height = Math.round(LOWRES_W / aspect);
   _lowresCtx = canvas.getContext('2d');
 }
 
@@ -2287,7 +2287,7 @@ function animateNoise() {
 function startNoise() {
   if (_noiseFrame !== null) return;
   const canvas = document.getElementById('camNoiseCanvas');
-  canvas.width = 640; canvas.height = 360;
+  canvas.width = 360; canvas.height = 240;
   _noiseCtx = canvas.getContext('2d');
   canvas.classList.remove('hidden');
   animateNoise();
