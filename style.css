@@ -957,16 +957,20 @@
     /* 비디오 CSS 필터 클래스 */
     .cam-flt-film90    { filter:sepia(0.2) contrast(1.1) saturate(0.78) brightness(0.94) !important; }
     .cam-flt-bw        { filter:grayscale(1) contrast(1.22) brightness(0.90) !important; }
-    .cam-flt-camcorder { filter:sepia(0.42) saturate(0.82) contrast(0.90) brightness(1.06) !important; }
+    .cam-flt-camcorder { filter:saturate(0.62) contrast(0.90) brightness(1.07) blur(0.4px) !important; }
 
-    /* ── 캠코더 스캔라인 ── */
+    /* ── 캠코더 스캔라인 (인터레이스) ── */
     .cam-scanlines {
       position:absolute; inset:0; z-index:3; pointer-events:none;
       background:repeating-linear-gradient(
         to bottom,
-        transparent 0px, transparent 2px,
-        rgba(0,0,0,0.09) 2px, rgba(0,0,0,0.09) 3px
+        rgba(0,10,40,0.08) 0px, rgba(0,10,40,0.08) 1px,
+        rgba(255,255,255,0.025) 1px, rgba(255,255,255,0.025) 2px
       );
+    }
+    /* 캠코더 블루 틴트 오버레이 */
+    .cam-filter-overlay.camcorder-tint {
+      background:rgba(60,80,210,0.48) !important;
     }
 
     /* ── 캠코더 REC 바 ── */

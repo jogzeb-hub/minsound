@@ -2243,7 +2243,17 @@ let _tmpCtx = null, _prevCtx = null, _diffCtx = null;
 function animateGrain() {
   grainSeed = (grainSeed + 1) % 100;
   const t = document.getElementById('grainTurbulence');
-  if (t) t.setAttribute('seed', grainSeed);
+  if (t) {
+    t.setAttribute('seed', grainSeed);
+    if (currentCamFilter === 'camcorder') {
+      // 수평 아날로그 테이프 노이즈
+      t.setAttribute('baseFrequency', '0.80 0.14');
+      t.setAttribute('numOctaves', '2');
+    } else {
+      t.setAttribute('baseFrequency', '0.72');
+      t.setAttribute('numOctaves', '4');
+    }
+  }
   grainFrame = requestAnimationFrame(animateGrain);
 }
 function stopGrain() {
@@ -2404,6 +2414,9 @@ function applyCamFilter(name) {
 
   // 기존 효과 정리
   if (name !== 'videoart') stopVideoArt();
+
+  // 캠코더 블루 틴트
+  document.getElementById('camFilterOverlay').classList.toggle('camcorder-tint', name === 'camcorder');
 
   // 캠코더 스캔라인 / REC 바
   const scanlines = document.getElementById('camScanlines');
